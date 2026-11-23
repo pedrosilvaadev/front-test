@@ -1,6 +1,7 @@
 import { scenarioHandler } from '../scenario'
 import { devHandlers } from './dev'
 import { healthHandlers } from './health'
+import { nftHandlers } from './nfts'
 
 /**
  * Ordered handler list shared by the browser worker and the node server.
@@ -9,4 +10,4 @@ import { healthHandlers } from './health'
  * Note: `server.use()` / `worker.use()` overrides are prepended and
  * therefore bypass the scenario middleware.
  */
-export const handlers = [scenarioHandler, ...devHandlers, ...healthHandlers]
+export const handlers = [scenarioHandler, ...devHandlers, ...healthHandlers, ...nftHandlers]
