@@ -1,0 +1,19 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { App } from './app'
+import { createAppRouter, createQueryClient } from './router'
+import './index.css'
+
+const queryClient = createQueryClient()
+const router = createAppRouter({ queryClient })
+
+const rootElement = document.getElementById('root')
+if (!rootElement) {
+  throw new Error('Root element #root not found')
+}
+
+createRoot(rootElement).render(
+  <StrictMode>
+    <App queryClient={queryClient} router={router} />
+  </StrictMode>,
+)
