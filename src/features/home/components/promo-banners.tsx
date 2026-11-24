@@ -1,21 +1,9 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
-import type { MouseEvent } from 'react'
+import { isPlainClick } from '@/lib/is-plain-click'
 import { cn } from '@/lib/utils'
 import { PROMO_BANNERS } from '../content'
 import { scrollToCatalog } from '../scroll-to-catalog'
-
-/** Primary-button click without modifiers (Ctrl/Cmd/Shift/Alt open a new tab/window instead). */
-function isPlainClick(event: MouseEvent<HTMLElement>): boolean {
-  return (
-    !event.defaultPrevented &&
-    event.button === 0 &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.shiftKey &&
-    !event.altKey
-  )
-}
 
 /**
  * Two promo banners (Figma "Início", below the catalog): image left, copy and

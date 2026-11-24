@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as NftIdOrSlugRouteImport } from './routes/nft.$idOrSlug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NftIdOrSlugRoute = NftIdOrSlugRouteImport.update({
+  id: '/nft/$idOrSlug',
+  path: '/nft/$idOrSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/nft/$idOrSlug': typeof NftIdOrSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/nft/$idOrSlug': typeof NftIdOrSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/nft/$idOrSlug': typeof NftIdOrSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/nft/$idOrSlug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/nft/$idOrSlug'
+  id: '__root__' | '/' | '/nft/$idOrSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  NftIdOrSlugRoute: typeof NftIdOrSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/nft/$idOrSlug': {
+      id: '/nft/$idOrSlug'
+      path: '/nft/$idOrSlug'
+      fullPath: '/nft/$idOrSlug'
+      preLoaderRoute: typeof NftIdOrSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  NftIdOrSlugRoute: NftIdOrSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

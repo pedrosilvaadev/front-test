@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { NftSummary } from '@/contracts'
 import { formatEth } from '@/lib/money'
 import { cn } from '@/lib/utils'
@@ -14,8 +15,8 @@ interface NftCardProps {
  * the number, e.g. "Emerald Ape #042"), price in ETH and the strike-through
  * previous price when discounted. The whole card is
  * clickable through a stretched link on the name, so the accessible link name
- * stays short. The detail route ships in P2-04; until then the plain anchor
- * resolves to the not-found page.
+ * stays short. Router `<Link>` to `/nft/$idOrSlug`: client navigation (with
+ * intent preloading); modifier/middle clicks keep the native new-tab behaviour.
  */
 export function NftCard({ nft, eager = false }: NftCardProps) {
   const showRarity = nft.rarity !== 'common'
@@ -38,15 +39,16 @@ export function NftCard({ nft, eager = false }: NftCardProps) {
         ) : null}
       </div>
       <h3 className="mt-3 truncate text-[0.9375rem] tracking-[0.02em] text-foreground md:mt-4">
-        <a
-          href={`/nft/${encodeURIComponent(nft.slug)}`}
+        <Link
+          to="/nft/$idOrSlug"
+          params={{ idOrSlug: nft.slug }}
           className={cn(
             'rounded-sm outline-none after:absolute after:inset-0 after:rounded-2xl after:content-[""]',
             'focus-visible:after:ring-2 focus-visible:after:ring-ring hover:text-brand',
           )}
         >
           {nft.name}
-        </a>
+        </Link>
       </h3>
       <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[0.9375rem] font-bold tracking-[0.04em] text-brand md:text-base">
         <span>

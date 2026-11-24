@@ -11,7 +11,7 @@
 | P2-01 | R10,R02 | ui | PASS (--full) | PASS | see git log | DONE |
 | P2-02 | R03,R07,R10 | frontend | PASS (--full) | PASS (after 1 fix loop) | see git log | DONE |
 | P2-03 | R02,R10,R07 | frontend (+qa loop 1) | PASS (--full) | PASS (after 1 fix loop) | see git log | DONE |
-| P2-04 | R02,R03,R10 | frontend | — | — | — | TODO (closes M1: --full) |
+| P2-04 | R02,R03,R10 | frontend | PASS (--full, M1) | PASS | see git log | DONE — M1 closed |
 | P3-01 | R06,R07 | frontend | — | — | — | TODO (auth: register/login/logout, session refresh/expiry, protected routes, cache isolation) |
 | P3-02 | R06,R07 | frontend | — | — | — | TODO (favorites, profile/avatar/password, wallets; closes M2) |
 | P4-01 | R04 | frontend | — | — | — | TODO (cart limits, guest persistence + merge, coupon) |
@@ -29,7 +29,8 @@
 - mock-api: reset must keep NFT versions monotonic (before P5); remove snapshot on setItem failure; reject/clear previousPrice <= price in dev patch.
 - qa: throwing-storage test; multi-tab persistence note; strengthen font self-hosting test.
 - frontend: cancel debounced search on history index change; overlay desktop search to avoid nav shift; consider zod-free route validator if Lighthouse needs.
-- frontend: dedupe isPlainClick (home); hero/featured NFT links → router Link in P2-04.
+- ui/layout: hide global mobile search bar + tab bar on NFT detail (Figma); header "Mercado" active on /nft.
+- frontend: detail error-state document title; auto-select an in-stock edition when the selected one sells out (P5 realtime); e2e no-write-request assertion for unavailable actions.
 - ui: safe-area insets for mobile top bar and side gutters; scan button contrast when enabled; switch planned-route <a> to <Link> as routes land.
 - P3: ENS required on profile save; cross-tab logout `storage` listener; idempotency attempt clearing rules (ADR-004).
 - Measure zod in main chunk when contracts reach app code.

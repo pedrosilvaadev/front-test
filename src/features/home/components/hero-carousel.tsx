@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
 import { useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { NftSummary } from '@/contracts'
+import { isPlainClick } from '@/lib/is-plain-click'
 import { cn } from '@/lib/utils'
 import { CATALOG_ANCHOR_ID, HERO_COPY } from '../content'
 import { featuredNftsQueryOptions, HERO_SLIDE_LIMIT } from '../home-queries'
@@ -12,22 +13,6 @@ import { scrollToCatalog } from '../scroll-to-catalog'
 const ART_BOX = 'size-[8.5rem] rounded-[0.75rem] md:size-72 md:rounded-[1.25rem] lg:size-[28.125rem]'
 
 type HeroState = 'loading' | 'ready' | 'empty' | 'error'
-
-/** Primary-button click without modifiers (Ctrl/Cmd/Shift/Alt keep the browser behaviour). */
-function isPlainClick(event: MouseEvent<HTMLElement>): boolean {
-  return (
-    !event.defaultPrevented &&
-    event.button === 0 &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.shiftKey &&
-    !event.altKey
-  )
-}
-
-function nftHref(nft: NftSummary): string {
-  return `/nft/${encodeURIComponent(nft.slug)}`
-}
 
 /**
  * Home hero (Figma "Início"). The headline, description and EXPLORAR are
@@ -149,8 +134,9 @@ export function HeroCarousel() {
                   hidden={index !== active}
                   className="animate-in duration-500 fade-in"
                 >
-                  <a
-                    href={nftHref(nft)}
+                  <Link
+                    to="/nft/$idOrSlug"
+                    params={{ idOrSlug: nft.slug }}
                     className={cn(
                       'block overflow-hidden bg-card outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                       ART_BOX,
@@ -166,7 +152,7 @@ export function HeroCarousel() {
                       decoding="async"
                       className="size-full object-cover"
                     />
-                  </a>
+                  </Link>
                 </div>
               ))}
             </div>

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { featuredNftsQueryOptions } from '../home-queries'
@@ -31,8 +32,9 @@ export function FeaturedNftCard({ className }: { className?: string }) {
         <p className="mt-1.5 text-[0.9375rem] font-bold tracking-[0.06em] text-foreground uppercase">Oferta limitada</p>
       </div>
       {nft ? (
-        <a
-          href={`/nft/${encodeURIComponent(nft.slug)}`}
+        <Link
+          to="/nft/$idOrSlug"
+          params={{ idOrSlug: nft.slug }}
           className="group block overflow-hidden rounded-card outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         >
           <img
@@ -44,7 +46,7 @@ export function FeaturedNftCard({ className }: { className?: string }) {
             decoding="async"
             className="aspect-[310/365] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
-        </a>
+        </Link>
       ) : (
         <Skeleton className="aspect-[310/365] w-full rounded-card bg-accent" data-testid="featured-nft-skeleton" />
       )}
