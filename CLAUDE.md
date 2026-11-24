@@ -3,6 +3,7 @@
 Read `IMPLEMENTATION_PLAN.md`, `docs/REQUIREMENTS.md`, and `docs/PROGRESS.md` before changes. The challenge README and Figma are authoritative. Do not claim visual parity without viewing the design; request access or document a blocker.
 
 ## Execution
+- **Deadline mode (ADR-009, active):** orchestrator may implement directly; per slice quick gate + slice e2e, no per-slice review; one independent review + `--full` gate at the end. Rules below apply except where ADR-009 relaxes them.
 - Invoke `/orchestrate` to manage the project. Orchestrator delegates to architect, mock-api, frontend, ui, integration, qa, and reviewer as needed (ADR-008: implementer writes its own tests; QA for milestone suites/hardening; small slices may be implemented by the orchestrator); the reviewer must always be a separate agent independent of the implementer.
 - For every slice: discovery → scoped plan → implement (with own tests) → targeted tests → one integrated gate by the orchestrator → independent review → corrections (at most two loops) → revalidation → semantic commit → automatic push → progress report. Cadence per ADR-008: quick gate + slice e2e per slice; `--full` at milestone close.
 - Agents must not invent evidence. Record commands, exit codes, and test artifacts. Never bypass a failed gate.

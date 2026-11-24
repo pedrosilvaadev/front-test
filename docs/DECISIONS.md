@@ -76,3 +76,15 @@ Record date, context, options, choice, tradeoffs, affected files, tests and appr
 - **Not relaxed:** independent reviewer PASS before commit; never commit/push on a failed gate; no gate-script changes to make a slice pass; max two fix loops; explicit file staging.
 - **Tradeoffs:** cross-slice e2e regressions may surface only at milestone close (mitigated: milestone `--full` before moving on; any regression found becomes the next slice's first fix). Fewer independent eyes on tests (mitigated: reviewer checks test quality).
 - **Status:** Accepted (owner).
+
+## ADR-009 — Delivery-deadline mode: deferred review (2026-11-24)
+- **Context:** Delivery is due 2026-11-25 and the token budget is limited. Each delegated agent re-reads the repo (an implementer used ~300k tokens on P3-01); per-slice independent review plus fix loops cost 10–20 min per slice.
+- **Decision (owner-approved 2026-11-24):** supersedes ADR-008 for the remaining slices.
+  1. The orchestrator may implement slices directly; spawn agents only when parallelism or isolation is clearly worth it.
+  2. Per slice: quick gate (`bash scripts/quality-gate.sh`, run by `commit-slice.sh`) + the slice's own Playwright specs. No per-slice independent review.
+  3. **One independent review at the end** over the integrated diff since `8511e4f` (security, money/idempotency, cache isolation, a11y), followed by fixes and a final `--full` gate.
+  4. Commit after every slice so `main` is always deliverable; keep README delivery status current.
+  5. Priority order: commerce (cart → checkout → order receipt), profile/wallets, minimal realtime, then Lighthouse + final README. Deploy to Vercel is done by the owner after completion.
+- **Not relaxed:** no commit on a failed gate; no gate-script edits; decimal ETH; idempotent orders; immutable receipts; explicit staging; push only to the owned origin.
+- **Risk:** defects found only in the final review; mitigated by committing small slices and reviewing the cumulative diff before delivery.
+- **Status:** Accepted (owner).

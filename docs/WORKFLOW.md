@@ -1,5 +1,8 @@
 # Delivery workflow
 
+## Deadline mode (ADR-009, active — supersedes ADR-008 until delivery)
+Orchestrator may implement directly; per slice: quick gate + slice e2e, commit and push; no per-slice review. One independent review of the cumulative diff since 8511e4f, fixes, then `--full` before delivery.
+
 ## Lean cadence (ADR-008, owner-approved 2026-11-24)
 - Implementer runs targeted unit/e2e for its slice plus typecheck/lint, and writes its own tests (no separate QA agent per slice).
 - Orchestrator runs ONE gate on the integrated tree before commit: quick gate (`bash scripts/quality-gate.sh`) + the slice's Playwright specs on both Chromium projects. `--full` only at milestone close (M1–M5) or when shared e2e infrastructure changes.
