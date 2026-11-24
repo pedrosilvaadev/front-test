@@ -9,7 +9,7 @@ describe('app shell', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'NFT Marketplace' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'NFT Marketplace' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: 'KURIO' })).toHaveAttribute('href', '/')
     expect(screen.getByText(/catalog is pending/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Browse catalog' })).toBeDisabled()
     expect(router.options.context.queryClient).toBeDefined()

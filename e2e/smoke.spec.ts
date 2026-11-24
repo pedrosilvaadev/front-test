@@ -9,10 +9,19 @@ import {
 } from './fixtures'
 
 test.describe('app shell', () => {
-  test('renders the home page heading', async ({ page }) => {
+  test('renders the home page heading', async ({ page }, testInfo) => {
     await gotoReady(page, '/')
     await expect(page.getByRole('heading', { level: 1, name: 'NFT Marketplace' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'NFT Marketplace' })).toBeVisible()
+    if (testInfo.project.name === 'chromium-mobile') {
+      // Mobile header has no logo; home is reached through the bottom tab bar.
+      const home = page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Início', exact: true })
+      await expect(home).toBeVisible()
+      await expect(home).toHaveAttribute('href', '/')
+    } else {
+      const logo = page.getByRole('link', { name: 'KURIO', exact: true })
+      await expect(logo).toBeVisible()
+      await expect(logo).toHaveAttribute('href', '/')
+    }
   })
 
   test('shows the not-found page for unknown routes', async ({ page }) => {

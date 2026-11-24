@@ -17,7 +17,7 @@ import { SEED_USERS, userRecordSchema, type UserRecord } from './fixtures/users'
  * in a way that old snapshots must not survive.
  */
 export const DB_STORAGE_KEY = 'kurio.mockDb'
-export const DB_SCHEMA_VERSION = 1
+export const DB_SCHEMA_VERSION = 2
 
 export interface MockDbState {
   nfts: NftDetail[]

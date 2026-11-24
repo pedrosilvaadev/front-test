@@ -98,7 +98,28 @@ describe('NFT fixtures', () => {
     expect(byName('Golden Beat #207')?.price).toBe('0.99')
     expect(byName('Golden Signal #160')?.price).toBe('0.39')
     for (const n of nfts) expect(n.image.url).toMatch(/^\/nfts\/[a-z-]+\.webp$/)
-    expect(new Set(nfts.map((n) => n.image.url)).size).toBe(6)
+    expect(new Set(nfts.map((n) => n.image.url))).toEqual(
+      new Set(['/nfts/emerald-ape.webp', '/nfts/sage-nomad.webp', '/nfts/ivory-baron.webp', '/nfts/golden-beat.webp']),
+    )
+  })
+
+  it('uses the design art and the real intrinsic size of each file', () => {
+    const art = (name: string) => nfts.find((n) => n.name === name)?.image.url
+    expect(art('Emerald Ape #042')).toBe('/nfts/emerald-ape.webp')
+    for (const name of ['Sage Nomad #009', 'Cosmic Bloom #118', 'Violet Nomad #314'])
+      expect(art(name)).toBe('/nfts/sage-nomad.webp')
+    for (const name of ['Neon Vessel #552', 'Ivory Baron #088']) expect(art(name)).toBe('/nfts/ivory-baron.webp')
+    for (const name of ['Golden Beat #207', 'Golden Signal #160']) expect(art(name)).toBe('/nfts/golden-beat.webp')
+    const size: Record<string, number> = {
+      '/nfts/emerald-ape.webp': 430,
+      '/nfts/sage-nomad.webp': 236,
+      '/nfts/ivory-baron.webp': 236,
+      '/nfts/golden-beat.webp': 236,
+    }
+    for (const n of [...nfts, ...nfts.flatMap((x) => x.gallery.map((g) => ({ image: g })))]) {
+      expect(n.image.width).toBe(size[n.image.url])
+      expect(n.image.height).toBe(size[n.image.url])
+    }
   })
 
   it('is deterministic and never uses Math.random or Date.now', () => {

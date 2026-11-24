@@ -1,10 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Self-hosted Roboto Mono (variable 100-700, font-display: swap). See docs/DESIGN_TOKENS.md. */
+@import "@fontsource-variable/roboto-mono/wght.css";
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+    /* Artwork/card corner radius sampled from the catalog cards. */
+    --radius-card: 1rem;
+}
+
 @theme inline {
+    --font-sans: "Roboto Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-mono: "Roboto Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -30,6 +39,10 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+    /* Kurio extensions (not part of the shadcn base palette). */
+    --color-brand: var(--brand);
+    --color-subtle-foreground: var(--subtle-foreground);
+    --color-border-accent: var(--border-accent);
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
@@ -45,80 +58,71 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * Kurio is dark-only (every Figma frame is dark). Values are sampled from the
+ * exported PNG frames; coordinates are listed in docs/DESIGN_TOKENS.md.
+ * `<html class="dark">` keeps shadcn `dark:` variants consistent.
+ */
 :root {
-    --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    color-scheme: dark;
+    --radius: 0.25rem;
+    --background: #140d0a;
+    --foreground: #f5f1eb;
+    --card: #241612;
+    --card-foreground: #f5f1eb;
+    --popover: #241612;
+    --popover-foreground: #f5f1eb;
+    --primary: #d28a4c;
+    --primary-foreground: #140d0a;
+    --secondary: #38220f;
+    --secondary-foreground: #f5f1eb;
+    --muted: #38220f;
+    --muted-foreground: #cfb28c;
+    --accent: #38220f;
+    --accent-foreground: #f5f1eb;
+    --destructive: #f0805f;
+    --border: #442c1a;
+    --input: #3f2319;
+    --ring: #e89b55;
+    --brand: #e89b55;
+    --subtle-foreground: #b39463;
+    --border-accent: #915e36;
+    --chart-1: #d28a4c;
+    --chart-2: #e89b55;
+    --chart-3: #cfb28c;
+    --chart-4: #915e36;
+    --chart-5: #38220f;
+    --sidebar: #241612;
+    --sidebar-foreground: #f5f1eb;
+    --sidebar-primary: #d28a4c;
+    --sidebar-primary-foreground: #140d0a;
+    --sidebar-accent: #38220f;
+    --sidebar-accent-foreground: #f5f1eb;
+    --sidebar-border: #442c1a;
+    --sidebar-ring: #e89b55;
+    /* Height reserved for the fixed mobile tab bar (excluding safe area). */
+    --tab-bar-height: 4.5rem;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
+  html {
+    @apply bg-background font-sans antialiased;
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
