@@ -278,24 +278,51 @@ test.describe('desktop search', () => {
 })
 
 test.describe('loading skeleton', () => {
-  test('shows shimmering skeletons while the catalog loads (slow scenario)', async ({ page }) => {
-    await gotoReady(page, '/?scenario=slow')
+  /**
+   * Deterministic loading window: with the worker already in control (the
+   * auto fixture settles `/`), the `timeout` scenario holds the next catalog
+   * request open (client timeout 10s, plus one retry), so the skeleton cannot
+   * disappear before it is asserted, regardless of machine load. A fixed
+   * `slow` latency raced the service-worker readiness wait instead.
+   */
+  async function holdNextCatalogRequest(page: Page): Promise<ListSummary> {
+    const pageTwo = await apiList(page, '?page=2')
+    await expectResults(page, await apiList(page, ''))
+    await setScenario(page, 'timeout')
+    await page.getByRole('navigation', { name: 'Paginação' }).getByRole('link', { name: 'Página 2' }).click()
+    await expect(page).toHaveURL(/\?page=2$/)
+    return pageTwo
+  }
+
+  test('shows shimmering skeletons while the catalog request is pending', async ({ page }) => {
+    const pageTwo = await holdNextCatalogRequest(page)
     const skeleton = page.getByTestId('catalog-skeleton')
     await expect(skeleton).toBeVisible()
+    // Results for the previous query are never shown while the next one loads.
+    await expect(results(page)).toHaveCount(0)
     const card = skeleton.locator('[data-slot="skeleton"]').first()
     await expect(card).toHaveCSS('animation-name', 'shimmer')
     await expect(card).toHaveCSS('animation-iteration-count', 'infinite')
     await expect(page.locator('#catalog-results')).toHaveAttribute('aria-busy', 'true')
+
+    // Restoring `default` releases the held request; the retry then resolves.
+    await setScenario(page, 'default')
+    const retry = page.getByRole('button', { name: 'Tentar novamente' })
+    await expect(results(page).or(retry)).toBeVisible({ timeout: 30_000 })
+    // If the automatic retry was already spent on the held request, retry manually.
+    if (await retry.isVisible()) await retry.click()
     await expect(results(page)).toBeVisible({ timeout: 15_000 })
     await expect(skeleton).toHaveCount(0)
+    await expectResults(page, pageTwo)
   })
 
   test('respects prefers-reduced-motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await gotoReady(page, '/?scenario=slow')
+    await holdNextCatalogRequest(page)
     const card = page.getByTestId('catalog-skeleton').locator('[data-slot="skeleton"]').first()
     await expect(card).toBeVisible()
     await expect(card).toHaveCSS('animation-iteration-count', '1')
     await expect(card).toHaveCSS('animation-duration', /^(1e-05s|0\.00001s)$/)
+    await setScenario(page, 'default')
   })
 })

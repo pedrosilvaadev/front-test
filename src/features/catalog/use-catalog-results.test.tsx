@@ -7,6 +7,7 @@ import { listNfts } from '@/api/nfts'
 import { server } from '@/mocks/node'
 import { setScenario } from '@/mocks/scenario'
 import { renderApp } from '@/test/render-app'
+import { APP_READY_TIMEOUT, APP_TEST_TIMEOUT } from '@/test/timeouts'
 import { parseCatalogSearch } from './catalog-search'
 import { useCatalogResults } from './use-catalog-results'
 
@@ -17,7 +18,7 @@ async function serveResponseForMusic() {
   return music
 }
 
-describe('useCatalogResults out-of-order guard', () => {
+describe('useCatalogResults out-of-order guard', { timeout: APP_TEST_TIMEOUT }, () => {
   it('never exposes a response whose echoed query differs from the requested one', async () => {
     const music = await serveResponseForMusic()
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -34,17 +35,17 @@ describe('useCatalogResults out-of-order guard', () => {
   it('the catalog keeps skeletons instead of rendering the mismatched items', async () => {
     await serveResponseForMusic()
     renderApp()
-    await waitFor(() => expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-busy', 'false'), { timeout: 5000 })
+    await waitFor(() => expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-busy', 'false'), { timeout: APP_READY_TIMEOUT })
     expect(screen.getByTestId('catalog-skeleton')).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'NFTs' })).not.toBeInTheDocument()
     expect(screen.queryByText('Golden Signal #160')).not.toBeInTheDocument()
   })
 })
 
-describe('catalog background update state', () => {
+describe('catalog background update state', { timeout: APP_TEST_TIMEOUT }, () => {
   it('marks the results busy with the "Atualizando" indicator until the new query lands', async () => {
     renderApp()
-    await screen.findByRole('list', { name: 'NFTs' }, { timeout: 5000 })
+    await screen.findByRole('list', { name: 'NFTs' }, { timeout: APP_READY_TIMEOUT })
     const panel = screen.getByRole('tabpanel')
     const indicator = screen.getByTestId('catalog-updating')
     expect(panel).toHaveAttribute('aria-busy', 'false')

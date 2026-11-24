@@ -28,7 +28,12 @@ function countLabel(total: number): string {
  * change is a navigation (`useUpdateCatalog`), so refresh, sharing and
  * back/forward restore the exact view.
  */
-export function CatalogSection() {
+interface CatalogSectionProps {
+  /** Extra content stacked under the filter sidebar (md+), e.g. the home "NFT em destaque" card. */
+  asideFooter?: ReactNode
+}
+
+export function CatalogSection({ asideFooter }: CatalogSectionProps = {}) {
   const query = useCatalogQuery()
   const update = useUpdateCatalog()
   const results = useCatalogResults(query)
@@ -90,9 +95,12 @@ export function CatalogSection() {
         Catálogo de NFTs
       </h2>
 
-      <aside aria-label="Filtros" className="hidden rounded-sm bg-card px-5 py-6 md:block">
-        <FilterPanel query={query} facets={latest?.facets} onChange={(patch) => void update(patch)} />
-      </aside>
+      <div className="hidden min-w-0 flex-col gap-6 md:flex">
+        <aside aria-label="Filtros" className="rounded-sm bg-card px-5 py-6">
+          <FilterPanel query={query} facets={latest?.facets} onChange={(patch) => void update(patch)} />
+        </aside>
+        {asideFooter}
+      </div>
 
       <div className="flex min-w-0 flex-col gap-6 md:gap-5">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">

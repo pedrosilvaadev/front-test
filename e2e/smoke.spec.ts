@@ -11,7 +11,7 @@ import {
 test.describe('app shell', () => {
   test('renders the home page heading', async ({ page }, testInfo) => {
     await gotoReady(page, '/')
-    await expect(page.getByRole('heading', { level: 1, name: 'NFT Marketplace' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /^SEJA DONO D/ })).toBeVisible()
     if (testInfo.project.name === 'chromium-mobile') {
       // Mobile header has no logo; home is reached through the bottom tab bar.
       const home = page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Início', exact: true })
@@ -29,7 +29,7 @@ test.describe('app shell', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible()
     await page.getByRole('link', { name: 'Back to home' }).click()
     await expect(page).toHaveURL('/')
-    await expect(page.getByRole('heading', { level: 1, name: 'NFT Marketplace' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /^SEJA DONO D/ })).toBeVisible()
   })
 })
 
@@ -63,8 +63,12 @@ test.describe('mock service worker', () => {
 
     // The selection persists across a plain reload.
     expect(await page.evaluate((key) => localStorage.getItem(key), SCENARIO_STORAGE_KEY)).toContain('server-error')
+    // The controller exists as soon as the reloaded document loads, but the MSW
+    // client only answers after `worker.start()` resolves (the app renders
+    // after it). Fetching in between bypasses the mocks, so wait for the shell.
     await page.reload()
     await waitForMockWorker(page)
+    await expect(page.locator('#root')).not.toBeEmpty()
     expect((await pageFetch(page, '/api/health')).status).toBe(500)
 
     await gotoReady(page, '/?scenario=default')
@@ -76,7 +80,7 @@ test.describe('mock service worker', () => {
 
   test('does not intercept non-API requests while scenario=offline is active', async ({ page }) => {
     await gotoReady(page, '/?scenario=offline')
-    await expect(page.getByRole('heading', { level: 1, name: 'NFT Marketplace' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /^SEJA DONO D/ })).toBeVisible()
 
     // API requests are failed by the offline scenario...
     expect(await pageFetchError(page, '/api/health')).toBe('TypeError')

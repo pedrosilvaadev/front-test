@@ -4,15 +4,16 @@ import { setScenario } from '@/mocks/scenario'
 import { queryKeys } from '@/lib/query-keys'
 import { parseCatalogSearch } from '../catalog-search'
 import { renderApp } from '@/test/render-app'
+import { APP_READY_TIMEOUT, APP_TEST_TIMEOUT } from '@/test/timeouts'
 
 async function cardTitles() {
-  const list = await screen.findByRole('list', { name: 'NFTs' }, { timeout: 5000 })
+  const list = await screen.findByRole('list', { name: 'NFTs' }, { timeout: APP_READY_TIMEOUT })
   return within(list)
     .getAllByRole('heading', { level: 3 })
     .map((heading) => heading.textContent)
 }
 
-describe('CatalogSection', () => {
+describe('CatalogSection', { timeout: APP_TEST_TIMEOUT }, () => {
   it('renders the first page from the API with facets and pagination', async () => {
     renderApp()
     const titles = await cardTitles()
@@ -45,7 +46,7 @@ describe('CatalogSection', () => {
 
   it('shows the empty state and clears filters', async () => {
     const { router } = renderApp({ initialPath: '/?q=zzzz-no-match&tab=new' })
-    expect(await screen.findByRole('heading', { name: 'Nenhum NFT encontrado' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Nenhum NFT encontrado' }, { timeout: APP_READY_TIMEOUT })).toBeInTheDocument()
     fireEvent.click(screen.getAllByRole('button', { name: 'Limpar filtros' })[0]!)
     await waitFor(() => expect(router.state.location.search).toEqual({ tab: 'new' }))
   })
@@ -53,7 +54,7 @@ describe('CatalogSection', () => {
   it('shows an error with retry that recovers', async () => {
     setScenario('server-error')
     renderApp()
-    const alert = await screen.findByRole('alert', {}, { timeout: 5000 })
+    const alert = await screen.findByRole('alert', {}, { timeout: APP_READY_TIMEOUT })
     expect(alert).toHaveTextContent('Não foi possível carregar os NFTs')
     setScenario('default')
     fireEvent.click(within(alert).getByRole('button', { name: 'Tentar novamente' }))

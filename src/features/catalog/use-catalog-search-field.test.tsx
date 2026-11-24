@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderApp } from '@/test/render-app'
+import { APP_READY_TIMEOUT, APP_TEST_TIMEOUT } from '@/test/timeouts'
 import { SEARCH_DEBOUNCE_MS } from './use-catalog-search-field'
 
 /**
@@ -10,7 +11,7 @@ import { SEARCH_DEBOUNCE_MS } from './use-catalog-search-field'
  */
 async function renderHome() {
   const utils = renderApp()
-  await screen.findByRole('list', { name: 'NFTs' }, { timeout: 5000 })
+  await screen.findByRole('list', { name: 'NFTs' }, { timeout: APP_READY_TIMEOUT })
   // Only timers are faked: the app already loaded with real ones.
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   return utils
@@ -30,7 +31,7 @@ afterEach(() => {
 describe.each([
   ['mobile', 'Explorar coleções'],
   ['desktop', 'Buscar NFTs'],
-])('%s header search', (_name, label) => {
+])('%s header search', { timeout: APP_TEST_TIMEOUT }, (_name, label) => {
   async function field() {
     if (label === 'Buscar NFTs') {
       // Desktop field opens from the magnifier toggle.
