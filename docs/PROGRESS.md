@@ -15,8 +15,8 @@
 | P3-01 | R06,R07,R08 | frontend | PASS (--full pre-loop; targeted e2e + quick gate post-loop) | PASS (after 1 fix loop) | see git log | DONE |
 | P3-02 | R06,R07 | frontend | — | — | — | TODO (favorites, profile/avatar/password, wallets; closes M2) |
 | P4-01 | R04,R07,R08 | frontend | PASS (quick gate + cart/detail/auth/shell e2e) | deferred (ADR-009 final review) | see git log | DONE |
-| P4-02 | R05 | frontend | — | — | — | TODO (quote revalidation, wallet/network, payment, idempotent order) |
-| P4-03 | R05 | frontend | — | — | — | TODO (pending/declined/confirmed immutable receipt; closes M3) |
+| P4-02 | R05,R04,R07,R08 | frontend | PASS (quick gate + checkout/cart/auth e2e) | deferred (ADR-009 final review) | see git log | DONE (merged with P4-03) |
+| P4-03 | R05 | — | — | — | — | MERGED into P4-02 (M3 functional; --full at final review) |
 | P5-01 | R09 | integration | — | — | — | TODO (socket.io-client mock transport, nft/order events, versioning, reconnect; closes M4) |
 | P6-01 | R11,R10 | qa | — | — | — | TODO (12 E2E groups, visual baselines, a11y) |
 | P6-02 | R12,R13 | qa | — | — | — | TODO (Lighthouse 3x medians, docs, deploy verification — deploy needs separate approval; closes M5) |

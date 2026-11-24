@@ -3,7 +3,6 @@ import { AlertTriangle, X } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Cart, Quote } from '@/contracts'
-import { UnavailableButton } from '@/features/nft-detail/components/unavailable-button'
 import { formatEth } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { cartErrorMessage, quoteChangeMessage } from '../cart-errors'
@@ -189,10 +188,25 @@ export function CartSummary({ cart, quote, quoteError, onRetryQuote }: CartSumma
         </p>
       ) : null}
 
-      {/* Checkout is delivered by P4-02; until then the action follows the unavailable pattern. */}
-      <UnavailableButton className="mt-2 h-14 w-full rounded-full bg-linear-to-r from-primary to-[#a66d3c] text-[0.9375rem] font-bold tracking-[0.04em] text-primary-foreground md:h-10 md:rounded-sm md:bg-primary md:bg-none">
-        Conectar e finalizar
-      </UnavailableButton>
+      {/* P4-02: private checkout (guests go through login and come back; the guest cart is merged). */}
+      {quote?.purchasable ? (
+        <Link
+          to="/checkout"
+          data-testid="cart-checkout"
+          className="mt-2 inline-flex h-14 w-full items-center justify-center rounded-full bg-linear-to-r from-primary to-[#a66d3c] text-[0.9375rem] font-bold tracking-[0.04em] text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:h-10 md:rounded-sm md:bg-primary md:bg-none"
+        >
+          Conectar e finalizar
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          data-testid="cart-checkout"
+          className="mt-2 h-14 w-full cursor-not-allowed rounded-full bg-primary text-[0.9375rem] font-bold tracking-[0.04em] text-primary-foreground opacity-50 md:h-10 md:rounded-sm"
+        >
+          Conectar e finalizar
+        </button>
+      )}
       <Link
         to="/"
         className="hidden self-center rounded-sm text-[0.9375rem] tracking-[0.04em] text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring md:inline"

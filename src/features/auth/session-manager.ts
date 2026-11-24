@@ -2,6 +2,7 @@ import { isCancelledError, queryOptions, type QueryClient } from '@tanstack/reac
 import type { CartMergeResult, Session, SessionInfo } from '@/contracts'
 import { forgetGuestCartId } from '@/features/cart/guest-cart-id'
 import { dismissCartMergeNotice, publishCartMergeNotice } from '@/features/cart/merge-notice'
+import { clearCheckoutStateForUser, clearCheckoutStateOnLogout } from '@/features/checkout/checkout-storage'
 import { queryKeys } from '@/lib/query-keys'
 import { apiErrorKind, isRetryableApiError, setAuthBridge } from './session-bridge'
 
@@ -175,6 +176,8 @@ export function createSessionManager({
   }
 
   function endSession(reason: SessionEndReason, { insideSessionQuery = false } = {}): void {
+    // ADR-004: checkout attempts/draft are kept on expiry, removed on explicit logout.
+    if (reason === 'logout' || reason === 'remote-logout') clearCheckoutStateOnLogout(stored?.userId ?? null)
     writeStored(null)
     validatedToken = null
     endReason = reason
@@ -249,6 +252,7 @@ export function createSessionManager({
       return
     }
     // Signed in (possibly as another user) in another tab: adopt its token and revalidate.
+    clearCheckoutStateForUser(next.userId)
     stored = next
     validatedToken = next.token
     endReason = null
@@ -300,6 +304,8 @@ export function createSessionManager({
       writeStored({ token: session.token, userId: session.user.id, expiresAt: session.expiresAt })
       forgetGuestCartId()
       publishCartMergeNotice(cartMerge)
+      // A different user never inherits another user's checkout attempt or draft (ADR-004).
+      clearCheckoutStateForUser(session.user.id)
       validatedToken = session.token
       endReason = null
       // Guest → user (cart key changes) or user switch: never show another owner's data.

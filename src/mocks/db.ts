@@ -4,13 +4,16 @@ import {
   idSchema,
   isoDateTimeSchema,
   nftDetailSchema,
+  orderSchema,
   quantitySchema,
   quoteSchema,
   versionSchema,
+  walletSchema,
   type NftDetail,
 } from '@/contracts'
 import { createNftSeed } from './fixtures/nfts'
 import { SEED_USERS, userRecordSchema, type UserRecord } from './fixtures/users'
+import { SEED_WALLETS } from './fixtures/wallets'
 
 /**
  * Simulated server-side state. Every mutation goes through `updateDb` so the
@@ -26,7 +29,7 @@ import { SEED_USERS, userRecordSchema, type UserRecord } from './fixtures/users'
  * in a way that old snapshots must not survive.
  */
 export const DB_STORAGE_KEY = 'kurio.mockDb'
-export const DB_SCHEMA_VERSION = 4
+export const DB_SCHEMA_VERSION = 5
 
 /**
  * Server-side session (ADR-005). Only the SHA-256 of the opaque bearer token
@@ -65,6 +68,43 @@ export type CartRecord = z.infer<typeof cartRecordSchema>
 export const quoteRecordSchema = z.object({ ownerKey: z.string().min(1), quote: quoteSchema })
 export type QuoteRecord = z.infer<typeof quoteRecordSchema>
 
+export const walletRecordSchema = z.object({ userId: idSchema, wallet: walletSchema })
+export type WalletRecord = z.infer<typeof walletRecordSchema>
+
+/**
+ * Order + server-only bookkeeping (P4-02): idempotency fingerprint, the stock
+ * reserved at creation, and the deterministic resolution decided at creation
+ * (`resolveAt` null = stays pending until a dev control resolves it).
+ */
+export const orderRecordSchema = z.object({
+  userId: idSchema,
+  fingerprint: z.string(),
+  order: orderSchema,
+  outcome: z.enum(['confirmed', 'declined']),
+  resolveAt: isoDateTimeSchema.nullable(),
+  reservations: z.array(z.object({ nftId: idSchema, editionId: idSchema, quantity: quantitySchema })),
+})
+export type OrderRecord = z.infer<typeof orderRecordSchema>
+
+/** Dev controls for checkout outcomes (`/api/__dev/checkout`); reset restores the defaults. */
+export const checkoutControlsSchema = z.object({
+  /** Resolution of the next orders: confirm (default), decline, or stay pending. */
+  orderOutcome: z.enum(['confirm', 'decline', 'pending']),
+  /** Delay before a pending order resolves (on the next read). */
+  resolveDelayMs: z.int().min(0).max(600_000),
+  /** Simulated wallet answer to `POST /api/wallets/:slot/connection`. */
+  walletConnect: z.enum(['accept', 'reject']),
+  /** Create the next order, then drop the response (network error) to exercise idempotent retries. */
+  dropNextOrderResponses: z.int().min(0).max(10),
+})
+export type CheckoutControls = z.infer<typeof checkoutControlsSchema>
+export const DEFAULT_CHECKOUT_CONTROLS: CheckoutControls = {
+  orderOutcome: 'confirm',
+  resolveDelayMs: 1500,
+  walletConnect: 'accept',
+  dropNextOrderResponses: 0,
+}
+
 export interface MockDbState {
   nfts: NftDetail[]
   users: UserRecord[]
@@ -74,6 +114,11 @@ export interface MockDbState {
   carts: CartRecord[]
   /** Recently issued quotes (pruned after expiry); referenced by `previousQuoteId` and orders. */
   quotes: QuoteRecord[]
+  /** Wallets per user and slot (P4-02 checkout; full management is P3-02). */
+  wallets: WalletRecord[]
+  /** Orders with idempotency records (P4-02). */
+  orders: OrderRecord[]
+  checkoutControls: CheckoutControls
 }
 
 export interface MockDb extends MockDbState {
@@ -91,6 +136,9 @@ const persistedSchema = z.object({
     sessions: z.array(sessionRecordSchema),
     carts: z.array(cartRecordSchema),
     quotes: z.array(quoteRecordSchema),
+    wallets: z.array(walletRecordSchema),
+    orders: z.array(orderRecordSchema),
+    checkoutControls: checkoutControlsSchema,
   }),
 })
 
@@ -102,6 +150,9 @@ export function createSeedState(): MockDbState {
     sessions: [],
     carts: [],
     quotes: [],
+    wallets: SEED_WALLETS.map((record) => structuredClone(record)),
+    orders: [],
+    checkoutControls: { ...DEFAULT_CHECKOUT_CONTROLS },
   }
 }
 
@@ -122,11 +173,11 @@ function loadState(source: DbStorage): MockDbState | undefined {
 
 function persist(): void {
   if (!storage) return
-  const { nfts, users, sessions, carts, quotes } = db
+  const { nfts, users, sessions, carts, quotes, wallets, orders, checkoutControls } = db
   try {
     storage.setItem(
       DB_STORAGE_KEY,
-      JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users, sessions, carts, quotes } }),
+      JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users, sessions, carts, quotes, wallets, orders, checkoutControls } }),
     )
   } catch {
     // Quota exceeded / privacy mode: keep working in memory.

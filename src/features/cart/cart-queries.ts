@@ -133,11 +133,11 @@ function latestQuote(queryClient: QueryClient, owner: CartOwner): Quote | undefi
  * cartVersion }]`): a new version means a new quote, requested with the
  * previous quote id so price/availability changes are reported.
  */
-export function useCartQuote(owner: CartOwner | undefined, cartVersion: number | undefined) {
+export function useCartQuote(owner: CartOwner | undefined, cartVersion: number | undefined, network: Network = QUOTE_NETWORK) {
   const manager = useSessionManager()
   const queryClient = useQueryClient()
   const enabled = owner !== undefined && cartVersion !== undefined
-  const key = queryKeys.cart.quote(owner?.key ?? 'guest:none', { network: QUOTE_NETWORK, cartVersion: cartVersion ?? -1 })
+  const key = queryKeys.cart.quote(owner?.key ?? 'guest:none', { network, cartVersion: cartVersion ?? -1 })
   return useQuery({
     queryKey: key,
     enabled,
@@ -146,11 +146,11 @@ export function useCartQuote(owner: CartOwner | undefined, cartVersion: number |
       const [{ createQuote }, request] = await Promise.all([loadQuoteApi(), requestOwner(owner, manager)])
       const previous = latestQuote(queryClient, owner)
       try {
-        return await createQuote(request, { network: QUOTE_NETWORK, previousQuoteId: previous?.quoteId }, { signal })
+        return await createQuote(request, { network, previousQuoteId: previous?.quoteId }, { signal })
       } catch (error) {
         // The previous quote is gone (mock reset): price without a baseline.
         if (previous && apiErrorKind(error) === 'not_found') {
-          return createQuote(request, { network: QUOTE_NETWORK }, { signal })
+          return createQuote(request, { network }, { signal })
         }
         throw error
       }

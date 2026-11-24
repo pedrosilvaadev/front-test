@@ -2,7 +2,9 @@ import { http, HttpResponse, type DefaultBodyType } from 'msw'
 import type { ErrorEnvelope } from '@/api/errors'
 import { toFieldErrorsDetails, type NftDetail } from '@/contracts'
 import { nftDevPatchSchema, patchNft } from '../catalog'
-import { resetDb } from '../db'
+import { checkoutControlsSchema, getDb, reloadDb, resetDb, updateDb } from '../db'
+import { resolveOrder } from '../order-store'
+import { disconnectAll } from '../wallet-store'
 import { apiPath, errorResponse } from '../http'
 import { expireSessions } from '../sessions'
 import { getScenario, isScenarioPresetName, resetScenario, setScenario } from '../scenario'
@@ -18,6 +20,52 @@ export const devHandlers = [
   }),
 
   http.get(devPath('/scenario'), () => HttpResponse.json(getScenario())),
+
+  /**
+   * Checkout controls (P4-02). Body: partial `{ orderOutcome?: 'confirm' |
+   * 'decline' | 'pending', resolveDelayMs?, walletConnect?: 'accept' |
+   * 'reject', dropNextOrderResponses? }` → 200 full controls. Applies to
+   * orders created afterwards; persisted; cleared by `POST /api/__dev/reset`.
+   */
+  http.put(devPath('/checkout'), async ({ request }) => {
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return errorResponse(400, 'INVALID_JSON', 'Request body must be JSON.')
+    }
+    reloadDb()
+    const parsed = checkoutControlsSchema.partial().safeParse(body)
+    if (!parsed.success) {
+      return errorResponse(422, 'VALIDATION_ERROR', 'Invalid checkout controls.', toFieldErrorsDetails(parsed.error))
+    }
+    const patch = Object.fromEntries(Object.entries(parsed.data).filter(([, value]) => value !== undefined))
+    updateDb((state) => {
+      state.checkoutControls = { ...state.checkoutControls, ...patch }
+    })
+    return HttpResponse.json(getDb().checkoutControls)
+  }),
+
+  /** Forces a pending order to `{ status: 'confirmed' | 'declined' }` (no-op when terminal). 200 order. */
+  http.post<{ orderId: string }>(devPath('/orders/:orderId/resolve'), async ({ request, params }) => {
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return errorResponse(400, 'INVALID_JSON', 'Request body must be JSON.')
+    }
+    const status = typeof body === 'object' && body !== null && 'status' in body ? body.status : undefined
+    if (status !== 'confirmed' && status !== 'declined') {
+      return errorResponse(422, 'VALIDATION_ERROR', 'Invalid status.', { fieldErrors: { status: ['confirmed | declined'] } })
+    }
+    reloadDb()
+    const order = resolveOrder(params.orderId, status)
+    if (!order) return errorResponse(404, 'ORDER_NOT_FOUND', 'Order not found.')
+    return HttpResponse.json(order)
+  }),
+
+  /** Drops every active wallet connection. 200 `{ disconnected }`. */
+  http.post(devPath('/wallets/disconnect'), () => HttpResponse.json({ disconnected: disconnectAll() })),
 
   /**
    * Domain control (ADR-005): force-expire active sessions so the next

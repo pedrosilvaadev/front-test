@@ -14,8 +14,10 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedCheckoutRouteImport } from './routes/_authed/checkout'
 import { Route as AuthedPerfilRouteImport } from './routes/_authed/perfil'
 import { Route as NftIdOrSlugRouteImport } from './routes/nft.$idOrSlug'
+import { Route as AuthedPedidosOrderIdRouteImport } from './routes/_authed/pedidos.$orderId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +43,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedCheckoutRoute = AuthedCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedPerfilRoute = AuthedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -51,22 +58,31 @@ const NftIdOrSlugRoute = NftIdOrSlugRouteImport.update({
   path: '/nft/$idOrSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedPedidosOrderIdRoute = AuthedPedidosOrderIdRouteImport.update({
+  id: '/pedidos/$orderId',
+  path: '/pedidos/$orderId',
+  getParentRoute: () => AuthedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/checkout': typeof AuthedCheckoutRoute
   '/perfil': typeof AuthedPerfilRoute
   '/nft/$idOrSlug': typeof NftIdOrSlugRoute
+  '/pedidos/$orderId': typeof AuthedPedidosOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/checkout': typeof AuthedCheckoutRoute
   '/perfil': typeof AuthedPerfilRoute
   '/nft/$idOrSlug': typeof NftIdOrSlugRoute
+  '/pedidos/$orderId': typeof AuthedPedidosOrderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -75,15 +91,32 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/_authed/checkout': typeof AuthedCheckoutRoute
   '/_authed/perfil': typeof AuthedPerfilRoute
   '/nft/$idOrSlug': typeof NftIdOrSlugRoute
+  '/_authed/pedidos/$orderId': typeof AuthedPedidosOrderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/cadastro' | '/carrinho' | '/login' | '/perfil' | '/nft/$idOrSlug'
+    | '/'
+    | '/cadastro'
+    | '/carrinho'
+    | '/login'
+    | '/checkout'
+    | '/perfil'
+    | '/nft/$idOrSlug'
+    | '/pedidos/$orderId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cadastro' | '/carrinho' | '/login' | '/perfil' | '/nft/$idOrSlug'
+  to:
+    | '/'
+    | '/cadastro'
+    | '/carrinho'
+    | '/login'
+    | '/checkout'
+    | '/perfil'
+    | '/nft/$idOrSlug'
+    | '/pedidos/$orderId'
   id:
     | '__root__'
     | '/'
@@ -91,8 +124,10 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/login'
+    | '/_authed/checkout'
     | '/_authed/perfil'
     | '/nft/$idOrSlug'
+    | '/_authed/pedidos/$orderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -141,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/checkout': {
+      id: '/_authed/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AuthedCheckoutRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/perfil': {
       id: '/_authed/perfil'
       path: '/perfil'
@@ -155,15 +197,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NftIdOrSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/pedidos/$orderId': {
+      id: '/_authed/pedidos/$orderId'
+      path: '/pedidos/$orderId'
+      fullPath: '/pedidos/$orderId'
+      preLoaderRoute: typeof AuthedPedidosOrderIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
   }
 }
 
 interface AuthedRouteChildren {
+  AuthedCheckoutRoute: typeof AuthedCheckoutRoute
   AuthedPerfilRoute: typeof AuthedPerfilRoute
+  AuthedPedidosOrderIdRoute: typeof AuthedPedidosOrderIdRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedCheckoutRoute: AuthedCheckoutRoute,
   AuthedPerfilRoute: AuthedPerfilRoute,
+  AuthedPedidosOrderIdRoute: AuthedPedidosOrderIdRoute,
 }
 
 const AuthedRouteWithChildren =

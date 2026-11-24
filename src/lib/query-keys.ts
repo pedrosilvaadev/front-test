@@ -13,7 +13,12 @@ export const queryKeys = {
   /** Current session (`SessionInfo | null`); per tab, value carries `user.id`. */
   session: () => ['session'] as const,
   /** Prefix of every private, user-scoped key (`['user', userId, ...]`). */
-  user: { all: ['user'] as const },
+  user: {
+    all: ['user'] as const,
+    wallets: (userId: string) => ['user', userId, 'wallets'] as const,
+    order: (userId: string, orderId: string) => ['user', userId, 'orders', orderId] as const,
+    orderList: (userId: string, status?: string) => ['user', userId, 'orders', 'list', { status }] as const,
+  },
   /** Prefix of every owner-scoped cart/quote key (`['cart', ownerKey, ...]`). */
   cart: {
     all: ['cart'] as const,
