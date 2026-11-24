@@ -1,10 +1,17 @@
 import { QueryClient } from '@tanstack/react-query'
 import { createRouter, type RouterHistory } from '@tanstack/react-router'
+import { loginSearch } from './features/auth/redirect'
+import { createSessionManager, type SessionManager } from './features/auth/session-manager'
 import { routeTree } from './routeTree.gen'
 
 export interface RouterContext {
   queryClient: QueryClient
+  /** Client session (ADR-005); one per app instance so tests stay isolated. */
+  session: SessionManager
 }
+
+/** Route id of the pathless layout that guards private pages. */
+export const AUTHED_ROUTE_ID = '/_authed'
 
 export function createQueryClient() {
   return new QueryClient({
@@ -61,12 +68,13 @@ export function stringifyFlatSearch(search: Record<string, unknown>): string {
 interface CreateAppRouterOptions {
   queryClient: QueryClient
   history?: RouterHistory
+  session?: SessionManager
 }
 
-export function createAppRouter({ queryClient, history }: CreateAppRouterOptions) {
-  return createRouter({
+export function createAppRouter({ queryClient, history, session = createSessionManager({ queryClient }) }: CreateAppRouterOptions) {
+  const router = createRouter({
     routeTree,
-    context: { queryClient },
+    context: { queryClient, session },
     history,
     defaultPreload: 'intent',
     // Let TanStack Query own caching; loaders always defer to the query cache.
@@ -75,6 +83,24 @@ export function createAppRouter({ queryClient, history }: CreateAppRouterOptions
     parseSearch: parseFlatSearch,
     stringifySearch: stringifyFlatSearch,
   })
+
+  // Session events that move the user (guards handle the navigation they trigger themselves).
+  session.subscribe(({ reason, redirectToLogin }) => {
+    const { location, matches } = router.state
+    const onPrivateRoute = matches.some((match) => match.routeId === AUTHED_ROUTE_ID)
+    if (redirectToLogin) {
+      if (location.pathname === '/login' || location.pathname === '/cadastro') return
+      void router.navigate({ to: '/login', search: loginSearch(location.href, 'expired'), replace: true })
+      return
+    }
+    if ((reason === 'logout' || reason === 'remote-logout') && onPrivateRoute) {
+      void router.navigate({ to: '/', replace: true })
+      return
+    }
+    if (reason === 'remote-login') void router.invalidate()
+  })
+
+  return router
 }
 
 declare module '@tanstack/react-router' {

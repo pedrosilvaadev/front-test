@@ -4,6 +4,7 @@ import { toFieldErrorsDetails, type NftDetail } from '@/contracts'
 import { nftDevPatchSchema, patchNft } from '../catalog'
 import { resetDb } from '../db'
 import { apiPath, errorResponse } from '../http'
+import { expireSessions } from '../sessions'
 import { getScenario, isScenarioPresetName, resetScenario, setScenario } from '../scenario'
 
 const devPath = (path: string) => apiPath(`/__dev${path}`)
@@ -17,6 +18,32 @@ export const devHandlers = [
   }),
 
   http.get(devPath('/scenario'), () => HttpResponse.json(getScenario())),
+
+  /**
+   * Domain control (ADR-005): force-expire active sessions so the next
+   * authenticated call answers 401 `SESSION_EXPIRED`. Optional JSON body
+   * `{ userId }` limits it to one user; no body expires every session.
+   * 200 `{ expired: <count> }`. Cleared by `POST /api/__dev/reset`.
+   */
+  http.post(devPath('/sessions/expire'), async ({ request }) => {
+    const text = await request.text()
+    let body: unknown = {}
+    if (text.trim() !== '') {
+      try {
+        body = JSON.parse(text)
+      } catch {
+        return errorResponse(400, 'INVALID_JSON', 'Request body must be JSON.')
+      }
+    }
+    const userId =
+      typeof body === 'object' && body !== null && 'userId' in body ? body.userId : undefined
+    if (userId !== undefined && (typeof userId !== 'string' || userId === '')) {
+      return errorResponse(422, 'VALIDATION_ERROR', 'Invalid session expiry request.', {
+        fieldErrors: { userId: ['Expected a user id.'] },
+      })
+    }
+    return HttpResponse.json({ expired: expireSessions(userId === undefined ? {} : { userId }) })
+  }),
 
   http.put(devPath('/scenario'), async ({ request }) => {
     let body: unknown

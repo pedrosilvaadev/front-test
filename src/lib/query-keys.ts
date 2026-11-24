@@ -7,6 +7,12 @@ import type { CatalogQuery } from '@/contracts'
  * Catalog keys are public: their payloads never embed user-specific fields.
  */
 export const queryKeys = {
+  /** Current session (`SessionInfo | null`); per tab, value carries `user.id`. */
+  session: () => ['session'] as const,
+  /** Prefix of every private, user-scoped key (`['user', userId, ...]`). */
+  user: { all: ['user'] as const },
+  /** Prefix of every owner-scoped cart/quote key (`['cart', ownerKey, ...]`). */
+  cart: { all: ['cart'] as const },
   catalog: {
     all: ['catalog'] as const,
     lists: () => ['catalog', 'list'] as const,

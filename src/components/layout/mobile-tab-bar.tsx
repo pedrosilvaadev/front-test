@@ -63,9 +63,10 @@ export function MobileTabBar({ cartCount }: MobileTabBarProps) {
           </PlannedRouteLink>
         </li>
         <li>
-          <PlannedRouteLink to={PLANNED_ROUTES.profile} aria-label="Perfil" className={itemClass}>
+          {/* P3-01: guests are sent to login by the `_authed` guard and come back here. */}
+          <Link to="/perfil" aria-label="Perfil" className={itemClass}>
             <User className="size-6 fill-current" aria-hidden="true" />
-          </PlannedRouteLink>
+          </Link>
         </li>
       </ul>
     </nav>

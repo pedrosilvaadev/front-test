@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import { LogOut, ShoppingCart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ShoppingCart } from 'lucide-react'
+import { lazy, Suspense } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { DesktopCatalogSearch } from '@/features/catalog/components/desktop-catalog-search'
 import { MobileCatalogSearch, MobileFilterSheet } from '@/features/catalog/components/mobile-catalog-controls'
 import { cn } from '@/lib/utils'
@@ -16,6 +17,17 @@ const navItemClass = cn(
   'rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
   'aria-[current=page]:font-bold aria-[current=page]:text-brand aria-[current=page]:after:opacity-100',
 )
+
+/**
+ * Account control (P3-01) in its own chunk: it observes the session query
+ * (`useQuery`) and pulls the auth module, which would otherwise grow the entry
+ * chunk. The import starts when this module loads (while MSW boots), so it is
+ * normally ready before the first render.
+ */
+const loadHeaderAccount = () =>
+  import('@/features/auth/components/user-menu').then((module) => ({ default: module.HeaderAccount }))
+const accountChunk = loadHeaderAccount()
+const HeaderAccount = lazy(() => accountChunk)
 
 const UNAVAILABLE_SECTIONS = ['Mercado', 'Criadores', 'Aprenda'] as const
 
@@ -77,12 +89,12 @@ function DesktopBar({ cartCount }: SiteHeaderProps) {
           <CartBadge count={cartCount} className="top-0.5 right-0" />
         </PlannedRouteLink>
 
-        <Button asChild className="h-[2.1875rem] rounded-sm px-2.5 text-[0.9375rem] font-medium tracking-[0.04em]">
-          <PlannedRouteLink to={PLANNED_ROUTES.login}>
-            <LogOut className="size-5" aria-hidden="true" />
-            Entrar
-          </PlannedRouteLink>
-        </Button>
+        {/* P3-01: "Entrar" for guests, account menu (Perfil, Sair) when signed in. */}
+        <Suspense
+          fallback={<Skeleton className="h-[2.1875rem] w-[5.5rem] rounded-sm bg-card" aria-hidden="true" />}
+        >
+          <HeaderAccount />
+        </Suspense>
       </div>
     </div>
   )

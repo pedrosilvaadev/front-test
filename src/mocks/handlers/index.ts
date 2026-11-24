@@ -1,4 +1,5 @@
 import { scenarioHandler } from '../scenario'
+import { authHandlers } from './auth'
 import { devHandlers } from './dev'
 import { healthHandlers } from './health'
 import { nftHandlers } from './nfts'
@@ -10,4 +11,4 @@ import { nftHandlers } from './nfts'
  * Note: `server.use()` / `worker.use()` overrides are prepended and
  * therefore bypass the scenario middleware.
  */
-export const handlers = [scenarioHandler, ...devHandlers, ...healthHandlers, ...nftHandlers]
+export const handlers = [scenarioHandler, ...devHandlers, ...healthHandlers, ...authHandlers, ...nftHandlers]

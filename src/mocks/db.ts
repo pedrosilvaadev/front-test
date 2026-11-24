@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { nftDetailSchema, type NftDetail } from '@/contracts'
+import { idSchema, isoDateTimeSchema, nftDetailSchema, type NftDetail } from '@/contracts'
 import { createNftSeed } from './fixtures/nfts'
 import { SEED_USERS, userRecordSchema, type UserRecord } from './fixtures/users'
 
@@ -17,11 +17,27 @@ import { SEED_USERS, userRecordSchema, type UserRecord } from './fixtures/users'
  * in a way that old snapshots must not survive.
  */
 export const DB_STORAGE_KEY = 'kurio.mockDb'
-export const DB_SCHEMA_VERSION = 2
+export const DB_SCHEMA_VERSION = 3
+
+/**
+ * Server-side session (ADR-005). Only the SHA-256 of the opaque bearer token
+ * is stored, so a leaked snapshot cannot be replayed as a token. Logout
+ * deletes the record; expiry keeps it until pruned so the API can answer
+ * `SESSION_EXPIRED` instead of `UNAUTHORIZED`.
+ */
+export const sessionRecordSchema = z.object({
+  tokenHash: z.string().regex(/^[0-9a-f]{64}$/),
+  userId: idSchema,
+  createdAt: isoDateTimeSchema,
+  expiresAt: isoDateTimeSchema,
+})
+export type SessionRecord = z.infer<typeof sessionRecordSchema>
 
 export interface MockDbState {
   nfts: NftDetail[]
   users: UserRecord[]
+  /** Persisted so sessions survive a reload (README §3); cleared by `resetDb`. */
+  sessions: SessionRecord[]
 }
 
 export interface MockDb extends MockDbState {
@@ -36,6 +52,7 @@ const persistedSchema = z.object({
   state: z.object({
     nfts: z.array(nftDetailSchema),
     users: z.array(userRecordSchema),
+    sessions: z.array(sessionRecordSchema),
   }),
 })
 
@@ -44,6 +61,7 @@ export function createSeedState(): MockDbState {
   return {
     nfts: createNftSeed(),
     users: SEED_USERS.map((record) => structuredClone(record)),
+    sessions: [],
   }
 }
 
@@ -64,9 +82,9 @@ function loadState(source: DbStorage): MockDbState | undefined {
 
 function persist(): void {
   if (!storage) return
-  const { nfts, users } = db
+  const { nfts, users, sessions } = db
   try {
-    storage.setItem(DB_STORAGE_KEY, JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users } }))
+    storage.setItem(DB_STORAGE_KEY, JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users, sessions } }))
   } catch {
     // Quota exceeded / privacy mode: keep working in memory.
   }
@@ -89,6 +107,18 @@ export function initDb(source: DbStorage | undefined): MockDb {
   }
   db = { ...(loaded ?? createSeedState()), generation: db.generation }
   return db
+}
+
+/**
+ * Re-reads the persisted snapshot when a storage backend is attached (no-op
+ * otherwise). Each browser tab runs its own copy of the mock server, so a
+ * session/user created by another tab is only visible after a reload; auth
+ * calls this on a token-lookup miss. Never writes.
+ */
+export function reloadDb(): void {
+  if (!storage) return
+  const loaded = loadState(storage)
+  if (loaded) db = { ...loaded, generation: db.generation }
 }
 
 export function getDb(): Readonly<MockDb> {

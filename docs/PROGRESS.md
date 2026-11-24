@@ -12,7 +12,7 @@
 | P2-02 | R03,R07,R10 | frontend | PASS (--full) | PASS (after 1 fix loop) | see git log | DONE |
 | P2-03 | R02,R10,R07 | frontend (+qa loop 1) | PASS (--full) | PASS (after 1 fix loop) | see git log | DONE |
 | P2-04 | R02,R03,R10 | frontend | PASS (--full, M1) | PASS | see git log | DONE — M1 closed |
-| P3-01 | R06,R07 | frontend | — | — | — | TODO (auth: register/login/logout, session refresh/expiry, protected routes, cache isolation) |
+| P3-01 | R06,R07,R08 | frontend | PASS (--full pre-loop; targeted e2e + quick gate post-loop) | PASS (after 1 fix loop) | see git log | DONE |
 | P3-02 | R06,R07 | frontend | — | — | — | TODO (favorites, profile/avatar/password, wallets; closes M2) |
 | P4-01 | R04 | frontend | — | — | — | TODO (cart limits, guest persistence + merge, coupon) |
 | P4-02 | R05 | frontend | — | — | — | TODO (quote revalidation, wallet/network, payment, idempotent order) |
@@ -32,5 +32,6 @@
 - ui/layout: hide global mobile search bar + tab bar on NFT detail (Figma); header "Mercado" active on /nft.
 - frontend: detail error-state document title; auto-select an in-stock edition when the selected one sells out (P5 realtime); e2e no-write-request assertion for unavailable actions.
 - ui: safe-area insets for mobile top bar and side gutters; scan button contrast when enabled; switch planned-route <a> to <Link> as routes land.
+- auth follow-ups: lazy account-menu error boundary; stricter stored-token check; move session-bridge to src/lib; scope mutation-cache clear to auth keys before P4.
 - P3: ENS required on profile save; cross-tab logout `storage` listener; idempotency attempt clearing rules (ADR-004).
 - Measure zod in main chunk when contracts reach app code.
