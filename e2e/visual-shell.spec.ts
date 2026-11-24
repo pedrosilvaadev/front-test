@@ -84,7 +84,7 @@ test.describe('desktop header and footer', () => {
       await expect(link).not.toHaveAttribute('href', /.*/)
     }
 
-    // Keyboard order: skip link, logo, nav, search, cart, sign-in.
+    // Keyboard order: skip link, logo, nav, search (P2-02: enabled), cart, sign-in.
     const expected = [
       'Pular para o conteúdo',
       'KURIO',
@@ -92,7 +92,7 @@ test.describe('desktop header and footer', () => {
       'Mercado (em breve)',
       'Criadores (em breve)',
       'Aprenda (em breve)',
-      'Buscar (em breve)',
+      'Buscar',
       'Carrinho',
       'Entrar',
     ]
@@ -128,7 +128,7 @@ test.describe('desktop header and footer', () => {
     await page.setViewportSize({ width: 768, height: 1024 })
     await gotoReady(page, '/')
     await expect(page.getByRole('banner').getByRole('navigation', { name: 'Principal' })).toBeVisible()
-    await expect(page.getByRole('search')).toBeHidden()
+    await expect(page.getByRole('search', { name: 'Explorar coleções' })).toBeHidden()
     await expectNoHorizontalOverflow(page)
     await saveScreenshot(page, testInfo, 'shell-home-tablet-768')
   })
@@ -149,8 +149,9 @@ test.describe('mobile top bar and tab bar', () => {
     await expect(page.getByRole('banner').getByRole('navigation')).toBeHidden()
     const search = page.getByRole('search', { name: 'Explorar coleções' })
     await expect(search).toBeVisible()
-    await expect(search.getByRole('searchbox')).toHaveAttribute('aria-disabled', 'true')
-    await expect(page.getByRole('button', { name: 'Filtros (em breve)' })).toHaveAttribute('aria-disabled', 'true')
+    // P2-02 wired the search field and filter button to the catalog.
+    await expect(search.getByRole('searchbox')).toBeEditable()
+    await expect(page.getByRole('button', { name: 'Filtros', exact: true })).not.toHaveAttribute('aria-disabled')
 
     const tabBar = page.getByRole('navigation', { name: 'Principal' })
     await expect(tabBar).toBeVisible()

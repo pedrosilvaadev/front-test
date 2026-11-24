@@ -8,6 +8,20 @@ import { resetScenario } from '@/mocks/scenario'
 // jsdom does not implement scrolling; router scroll restoration calls it.
 Object.defineProperty(window, 'scrollTo', { value: vi.fn(), writable: true })
 
+// jsdom lacks ResizeObserver; Radix primitives (slider, select) measure with it.
+if (!('ResizeObserver' in globalThis)) {
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  Object.defineProperty(globalThis, 'ResizeObserver', { value: ResizeObserverStub, writable: true })
+}
+// jsdom does not implement scrollIntoView (catalog pagination scrolls to the results).
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = vi.fn()
+}
+
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' })
 })

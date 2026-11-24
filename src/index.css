@@ -9,6 +9,18 @@
 @theme {
     /* Artwork/card corner radius sampled from the catalog cards. */
     --radius-card: 1rem;
+    /* Skeleton shimmer (README §8): a highlight band sweeping left to right.
+       Neutralized by the prefers-reduced-motion rule at the end of this file. */
+    --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+    @keyframes shimmer {
+        from {
+            background-position: 150% 0;
+        }
+        to {
+            background-position: -50% 0;
+        }
+    }
 }
 
 @theme inline {

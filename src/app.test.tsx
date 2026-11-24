@@ -10,8 +10,8 @@ describe('app shell', () => {
       await screen.findByRole('heading', { level: 1, name: 'NFT Marketplace' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'KURIO' })).toHaveAttribute('href', '/')
-    expect(screen.getByText(/catalog is pending/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Browse catalog' })).toBeDisabled()
+    // P2-02: the home renders the catalog instead of the placeholder.
+    expect(await screen.findByRole('list', { name: 'NFTs' }, { timeout: 5000 })).toBeInTheDocument()
     expect(router.options.context.queryClient).toBeDefined()
   })
 

@@ -58,3 +58,9 @@ Record date, context, options, choice, tradeoffs, affected files, tests and appr
 - **Tradeoffs:** one extra header; guest carts in the mock DB must be cleared by reset. A failed login leaves the guest cart untouched (no data loss).
 - **Files:** `src/contracts/cart.ts`, `src/contracts/session.ts`; implementation P1-02 / P4. **Tests:** E2E group 5.
 - **Status:** Proposed (P1-01), pending independent review.
+
+## ADR-007 — Flat string search params for the router (2026-11-23)
+- **Context:** TanStack Router's default search serializer JSON-encodes values (`minPrice=%221.5%22`, numeric `page`), breaking the contract's flat canonical catalog URLs (`serializeCatalogQuery`).
+- **Decision:** `src/router.tsx` installs a global `parseSearch`/`stringifySearch` that keeps every value as a plain string (commas unescaped; prototype-safe parsing). Every route's `validateSearch` must accept string inputs and normalize them (the catalog uses `catalogQuerySchema`).
+- **Consequences:** future routes cannot rely on typed JSON search values; repeated keys are only joined for list keys.
+- **Status:** Accepted (orchestrator, after P2-02 review N1).
