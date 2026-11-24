@@ -3,11 +3,11 @@
 Read `IMPLEMENTATION_PLAN.md`, `docs/REQUIREMENTS.md`, and `docs/PROGRESS.md` before changes. The challenge README and Figma are authoritative. Do not claim visual parity without viewing the design; request access or document a blocker.
 
 ## Execution
-- Invoke `/orchestrate` to manage the project. Orchestrator delegates to architect, mock-api, frontend, ui, integration, qa, and reviewer; the reviewer must be independent of the implementer.
-- For every small slice: discovery → scoped plan → implement → targeted tests → full applicable gates → independent review → corrections (at most two loops) → revalidation → semantic commit → automatic push → progress report.
+- Invoke `/orchestrate` to manage the project. Orchestrator delegates to architect, mock-api, frontend, ui, integration, qa, and reviewer as needed (ADR-008: implementer writes its own tests; QA for milestone suites/hardening; small slices may be implemented by the orchestrator); the reviewer must always be a separate agent independent of the implementer.
+- For every slice: discovery → scoped plan → implement (with own tests) → targeted tests → one integrated gate by the orchestrator → independent review → corrections (at most two loops) → revalidation → semantic commit → automatic push → progress report. Cadence per ADR-008: quick gate + slice e2e per slice; `--full` at milestone close.
 - Agents must not invent evidence. Record commands, exit codes, and test artifacts. Never bypass a failed gate.
 - One owner per file in concurrent tasks. Use isolated worktrees for parallel modifications; orchestrator integrates and verifies sequentially.
-- Do not let reviewer edit production files. QA owns test code and evidence, not feature implementation.
+- Do not let reviewer edit production files. Implementers write their slice tests; QA owns milestone suites, shared test infrastructure and evidence, not feature implementation.
 - Only the orchestrator may stage, commit, or push. Never run `git add .`; stage explicit files only. Never amend published commits or force push.
 - Push is explicitly authorized by the user **after successful quality gates** to the user's own origin `pedrosilvaadev/front-test`, directly on `main` (owner decision, ADR-001; trunk-based, no feature branches required). Never push to junglegaming/frontend-challenge or an unknown upstream; if ownership cannot be verified, stop and ask.
 - No deploy or destructive git operations without separate authorization. Do not disable security checks or alter gate scripts to make a failing slice pass.

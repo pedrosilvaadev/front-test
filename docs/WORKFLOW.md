@@ -1,12 +1,20 @@
 # Delivery workflow
 
+## Lean cadence (ADR-008, owner-approved 2026-11-24)
+- Implementer runs targeted unit/e2e for its slice plus typecheck/lint, and writes its own tests (no separate QA agent per slice).
+- Orchestrator runs ONE gate on the integrated tree before commit: quick gate (`bash scripts/quality-gate.sh`) + the slice's Playwright specs on both Chromium projects. `--full` only at milestone close (M1–M5) or when shared e2e infrastructure changes.
+- Reviewer (separate agent, always) reads diff + acceptance criteria + recorded evidence; re-runs only targeted checks to settle a concrete doubt. Figma screenshot comparison only when the slice delivers a new screen.
+- Small slices may be implemented directly by the orchestrator; review stays independent.
+- QA agent: milestone suites, flaky-test hardening, Lighthouse.
+- Unchanged: review PASS before commit, no commit on failed gate, no gate-script edits to pass, max two fix loops, explicit staging.
+
 ## Per slice
 1. **Discover**: cite README section, Figma frame, and current files.
 2. **Plan**: fill task template, specify ownership, dependencies, tests, risks.
 3. **Implement**: one writer per file; no implicit contract changes.
-4. **Validate**: run targeted tests, then `scripts/quality-gate.sh` (all configured checks). Record exit codes.
+4. **Validate**: implementer runs targeted tests; orchestrator runs the gate once per ADR-008. Record exit codes.
 5. **Independent review**: reviewer agent not involved in implementation. PASS or BLOCK with reproducible findings.
-6. **Repair**: implementer fixes; rerun affected tests and all gates. Maximum two review cycles; escalate persistent blockers.
+6. **Repair**: implementer fixes; rerun affected tests, then the orchestrator reruns the gate once. Maximum two review cycles; escalate persistent blockers.
 7. **Commit + push**: orchestrator runs `scripts/commit-slice.sh` with explicit paths and a Conventional Commit message. Script reruns gate, secret checks and validates safe origin/branch. No force pushes.
 8. **Report**: update progress, requirements, ADRs and next slice. Commit progress with same slice where appropriate.
 

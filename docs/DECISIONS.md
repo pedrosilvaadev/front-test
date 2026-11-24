@@ -64,3 +64,15 @@ Record date, context, options, choice, tradeoffs, affected files, tests and appr
 - **Decision:** `src/router.tsx` installs a global `parseSearch`/`stringifySearch` that keeps every value as a plain string (commas unescaped; prototype-safe parsing). Every route's `validateSearch` must accept string inputs and normalize them (the catalog uses `catalogQuerySchema`).
 - **Consequences:** future routes cannot rely on typed JSON search values; repeated keys are only joined for list keys.
 - **Status:** Accepted (orchestrator, after P2-02 review N1).
+
+## ADR-008 — Lean delivery cadence (2026-11-24)
+- **Context:** Each slice ran the full gate (≈4 min) 3–4 times (implementer, reviewer, orchestrator, commit script) and spawned 3–4 cold agents, giving 30–60 min per slice; the remaining ~15–18 slices would take too long. The owner asked to speed up delivery even at the cost of some steps.
+- **Decision (owner-approved 2026-11-24):**
+  1. **One full gate per slice.** Implementers run targeted tests plus typecheck/lint; the reviewer reads the evidence instead of re-running the gate (targeted re-runs only to settle a specific doubt). The orchestrator runs the gate once on the integrated tree before commit; `commit-slice.sh` keeps its quick gate.
+  2. **Full E2E (`--full`) only at milestone close** (M1…M5) and when a slice changes shared e2e infrastructure. Intermediate slices: quick gate + `npx playwright test <slice spec(s)>` on both Chromium projects.
+  3. **Fewer agents.** The implementer writes its own unit/e2e tests (no separate QA agent per slice; QA is used for milestone suites, flaky-test hardening and Lighthouse). For small slices the orchestrator may implement directly; the reviewer stays a separate agent.
+  4. **Larger slices.** Remaining work regrouped (see PROGRESS.md): P3 in 2 slices, P4 in 3, P5 in 1, P6 in 2–3.
+  5. **Lean review.** Diff + acceptance criteria + evidence. Screenshot comparison against Figma only for slices that deliver a new screen.
+- **Not relaxed:** independent reviewer PASS before commit; never commit/push on a failed gate; no gate-script changes to make a slice pass; max two fix loops; explicit file staging.
+- **Tradeoffs:** cross-slice e2e regressions may surface only at milestone close (mitigated: milestone `--full` before moving on; any regression found becomes the next slice's first fix). Fewer independent eyes on tests (mitigated: reviewer checks test quality).
+- **Status:** Accepted (owner).
