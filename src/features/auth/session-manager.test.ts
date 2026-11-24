@@ -280,3 +280,30 @@ describe('session manager: logout and cross-tab', () => {
     )
   })
 })
+
+describe('session manager: guest cart hand-off (P4-01, ADR-006)', () => {
+  it('signIn forgets the merged guest cart id and publishes the merge result; logout dismisses it', async () => {
+    const { GUEST_CART_STORAGE_KEY, readGuestCartId } = await import('@/features/cart/guest-cart-id')
+    const { readCartMergeNotice } = await import('@/features/cart/merge-notice')
+    window.localStorage.setItem(GUEST_CART_STORAGE_KEY, '44444444-4444-4444-8444-444444444444')
+    const { session } = setup()
+    const response = await authApi.login(DEMO_CREDENTIALS.collector)
+    const cartMerge = { mergedItems: 1, adjustments: [] }
+    session.signIn(response.session, cartMerge)
+    expect(readGuestCartId()).toBeNull()
+    expect(readCartMergeNotice()).toEqual(cartMerge)
+    expect(session.getUserId()).toBe('usr_001')
+    await session.signOut()
+    expect(readCartMergeNotice()).toBeNull()
+    expect(session.getUserId()).toBeNull()
+  })
+
+  it('clears non-cart mutations (auth variables) on sign-in but keeps cart mutations', async () => {
+    const { session, queryClient } = setup()
+    const cache = queryClient.getMutationCache()
+    cache.build(queryClient, { mutationKey: ['cart', 'add'], mutationFn: () => Promise.resolve(null) })
+    cache.build(queryClient, { mutationFn: () => Promise.resolve(null) })
+    await signInAs(session, DEMO_CREDENTIALS.collector)
+    expect(cache.getAll().map((mutation) => mutation.options.mutationKey)).toEqual([['cart', 'add']])
+  })
+})

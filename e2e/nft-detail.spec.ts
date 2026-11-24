@@ -120,7 +120,7 @@ test.describe('nft detail: navigation', () => {
 })
 
 test.describe('nft detail: purchase controls', () => {
-  test('editions and stepper bounds; buy actions are unavailable', async ({ page, isMobile }) => {
+  test('editions and stepper bounds; buy adds the selection to the cart', async ({ page, isMobile }) => {
     await gotoReady(page, `/nft/${SLUG}`)
     await expectDetail(page, NAME)
     const group = page.getByRole('radiogroup', { name: 'Edição:' })
@@ -148,11 +148,12 @@ test.describe('nft detail: purchase controls', () => {
     await group.getByRole('radio', { name: '1/10', exact: true }).click()
     await expect(value).toHaveText('2')
 
-    const buy = scope.getByRole('button', { name: isMobile ? /^Comprar NFT/ : /^COMPRAR/ })
-    await expect(buy).toHaveAttribute('aria-disabled', 'true')
-    const before = page.url()
-    await buy.click({ force: true })
-    expect(page.url()).toBe(before)
+    // P4-01: the buy action adds the selection (1/10 × 2) and opens the cart.
+    await scope.getByRole('button', { name: isMobile ? 'Comprar NFT' : 'COMPRAR', exact: true }).click()
+    await expect(page).toHaveURL(/\/carrinho$/, READY)
+    await expect(page.getByTestId('cart-line')).toHaveCount(1, READY)
+    await expect(page.getByTestId('cart-line-quantity')).toHaveText('2')
+    await expect(page.getByTestId('cart-line-edition').filter({ visible: true })).toHaveText('Edição: 1/10')
   })
 
   test('mobile: sticky bar stays in view and back returns to the previous page', async ({ page, isMobile }) => {

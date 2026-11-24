@@ -1,14 +1,10 @@
 import { Link } from '@tanstack/react-router'
-import { ShoppingCart } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DesktopCatalogSearch } from '@/features/catalog/components/desktop-catalog-search'
 import { MobileCatalogSearch, MobileFilterSheet } from '@/features/catalog/components/mobile-catalog-controls'
+import { CartMergeNotice, CartNavLink } from '@/features/cart/components/cart-chrome'
 import { cn } from '@/lib/utils'
-import { CartBadge } from './cart-badge'
-import { cartLabel } from './cart-label'
-import { PlannedRouteLink } from './planned-route-link'
-import { PLANNED_ROUTES } from './planned-routes'
 import { UnavailableLink } from './unavailable-link'
 
 const navItemClass = cn(
@@ -31,21 +27,20 @@ const HeaderAccount = lazy(() => accountChunk)
 
 const UNAVAILABLE_SECTIONS = ['Mercado', 'Criadores', 'Aprenda'] as const
 
-interface SiteHeaderProps {
-  /** Units in the cart; owned by the cart slice. Omitted → no badge. */
-  cartCount?: number
-}
-
-export function SiteHeader({ cartCount }: SiteHeaderProps) {
+/** Header; also hosts the guest-cart merge notice (P4-01), shown after sign-in on any route. */
+export function SiteHeader() {
   return (
-    <header className="bg-background">
-      <DesktopBar cartCount={cartCount} />
-      <MobileSearchBar />
-    </header>
+    <>
+      <header className="bg-background">
+        <DesktopBar />
+        <MobileSearchBar />
+      </header>
+      <CartMergeNotice />
+    </>
   )
 }
 
-function DesktopBar({ cartCount }: SiteHeaderProps) {
+function DesktopBar() {
   return (
     <div className="mx-auto hidden h-[4.25rem] w-full max-w-[75rem] items-stretch justify-between gap-4 border-b border-border px-6 md:flex xl:px-0">
       <div className="flex items-center pt-3.5 lg:flex-1">
@@ -80,14 +75,11 @@ function DesktopBar({ cartCount }: SiteHeaderProps) {
         {/* P2-02: catalog search bound to ?q= (debounced, works from any route). */}
         <DesktopCatalogSearch />
 
-        <PlannedRouteLink
-          to={PLANNED_ROUTES.cart}
-          aria-label={cartLabel(cartCount)}
-          className="relative inline-flex size-9 items-center justify-center rounded-md text-foreground outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <ShoppingCart className="size-6" aria-hidden="true" />
-          <CartBadge count={cartCount} className="top-0.5 right-0" />
-        </PlannedRouteLink>
+        {/* P4-01: cart link with the current owner's item count. */}
+        <CartNavLink
+          className="relative inline-flex size-9 items-center justify-center rounded-md text-foreground outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:text-brand"
+          badgeClassName="top-0.5 right-0"
+        />
 
         {/* P3-01: "Entrar" for guests, account menu (Perfil, Sair) when signed in. */}
         <Suspense

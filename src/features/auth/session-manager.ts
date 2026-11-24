@@ -1,5 +1,7 @@
 import { isCancelledError, queryOptions, type QueryClient } from '@tanstack/react-query'
-import type { Session, SessionInfo } from '@/contracts'
+import type { CartMergeResult, Session, SessionInfo } from '@/contracts'
+import { forgetGuestCartId } from '@/features/cart/guest-cart-id'
+import { dismissCartMergeNotice, publishCartMergeNotice } from '@/features/cart/merge-notice'
 import { queryKeys } from '@/lib/query-keys'
 import { apiErrorKind, isRetryableApiError, setAuthBridge } from './session-bridge'
 
@@ -51,6 +53,8 @@ type SessionListener = (event: SessionEvent) => void
 export interface SessionManager {
   /** Current bearer token (memory). */
   getToken: () => string | null
+  /** User id of the current token (cart owner key `user:<id>`), `null` for guests. */
+  getUserId: () => string | null
   /** Query options for `['session']`; never throws for 401 (resolves `null`). */
   sessionQueryOptions: () => ReturnType<typeof buildSessionQueryOptions>
   /** Cached session, fetching it once if unknown (boot). */
@@ -59,8 +63,12 @@ export interface SessionManager {
   revalidateSession: () => Promise<SessionInfo | null>
   /** Reason of the last session loss, consumed by the login redirect. */
   takeEndReason: () => SessionEndReason | null
-  /** Stores a session returned by login/register and clears the previous user's private data. */
-  signIn: (session: Session) => void
+  /**
+   * Stores a session returned by login/register and clears the previous
+   * user's private data. The guest cart was merged server side (ADR-006): its
+   * id is forgotten and `cartMerge` (adjustments) is published to the UI.
+   */
+  signIn: (session: Session, cartMerge?: CartMergeResult | null) => void
   /** Local logout (immediate) + best-effort `POST /api/auth/logout`. */
   signOut: () => Promise<void>
   subscribe: (listener: SessionListener) => () => void
@@ -172,6 +180,7 @@ export function createSessionManager({
     endReason = reason
     clearPrivateQueries()
     clearMutations()
+    dismissCartMergeNotice()
     if (!insideSessionQuery) replaceSessionQuery(null)
     emit({ reason, redirectToLogin: reason === 'expired' && guardDepth === 0 })
   }
@@ -183,11 +192,16 @@ export function createSessionManager({
 
   /**
    * Login/register mutation variables carry the plaintext password: drop
-   * every auth mutation from the cache when the session changes (forms also
-   * reset on success and use `gcTime: 0`).
+   * them (and any other non-cart mutation) from the cache when the session
+   * changes (forms also reset on success and use `gcTime: 0`). Cart
+   * mutations (`['cart', ...]` keys, no secrets) are kept so their observers
+   * settle normally; their callbacks ignore results for a previous owner.
    */
   function clearMutations(): void {
-    queryClient.getMutationCache().clear()
+    const cache = queryClient.getMutationCache()
+    for (const mutation of cache.getAll()) {
+      if (mutation.options.mutationKey?.[0] !== 'cart') cache.remove(mutation)
+    }
   }
 
   async function fetchSession(signal: AbortSignal): Promise<SessionInfo | null> {
@@ -259,6 +273,7 @@ export function createSessionManager({
 
   return {
     getToken: () => stored?.token ?? null,
+    getUserId: () => stored?.userId ?? null,
     sessionQueryOptions: options,
     ensureSession: () => queryClient.ensureQueryData(options()),
     async revalidateSession() {
@@ -281,8 +296,10 @@ export function createSessionManager({
       endReason = null
       return reason
     },
-    signIn(session) {
+    signIn(session, cartMerge = null) {
       writeStored({ token: session.token, userId: session.user.id, expiresAt: session.expiresAt })
+      forgetGuestCartId()
+      publishCartMergeNotice(cartMerge)
       validatedToken = session.token
       endReason = null
       // Guest → user (cart key changes) or user switch: never show another owner's data.

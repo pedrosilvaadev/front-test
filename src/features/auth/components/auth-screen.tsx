@@ -69,7 +69,7 @@ export function AuthScreen({ mode, search }: { mode: AuthMode; search: AuthSearc
   }
 
   function handleSuccess(response: AuthResponse) {
-    session.signIn(response.session)
+    session.signIn(response.session, response.cartMerge)
     void router.navigate({ href: target, replace: true })
   }
 

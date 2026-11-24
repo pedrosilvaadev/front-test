@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState, type FormEvent } from 'react'
 import { login } from '@/api/auth'
+import { withGuestCart } from '@/features/cart/guest-cart-id'
 import { UnavailableLink } from '@/components/layout/unavailable-link'
 import type { AuthResponse, LoginRequest } from '@/contracts'
 import { mapAuthError, validateLogin, type FieldErrors, type LoginField, type LoginValues } from '../form-validation'
@@ -33,7 +34,7 @@ export function LoginForm({ onSuccess, notice }: LoginFormProps) {
 
   // `gcTime: 0` + `reset()` on success: the variables hold the plaintext password,
   // so they must not linger in the MutationCache (the session manager also clears it).
-  const mutation = useMutation({ mutationFn: (body: LoginRequest) => login(body), retry: false, gcTime: 0 })
+  const mutation = useMutation({ mutationFn: (body: LoginRequest) => login(withGuestCart(body)), retry: false, gcTime: 0 })
 
   function focusFirst(fieldErrors: FieldErrors<LoginField>) {
     const first = FIELDS.find((field) => fieldErrors[field])

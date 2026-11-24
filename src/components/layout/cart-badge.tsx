@@ -7,8 +7,8 @@ interface CartBadgeProps {
 }
 
 /**
- * Visual count bubble on the cart icon. The count is supplied by the cart
- * slice (P4); until then the shell passes nothing and no number is shown.
+ * Visual count bubble on the cart icon. The count comes from the cart query
+ * (`CartNavLink`, P4-01); unknown or 0 shows nothing.
  * Decorative: the owning link exposes the count in its accessible name.
  */
 export function CartBadge({ count, className }: CartBadgeProps) {

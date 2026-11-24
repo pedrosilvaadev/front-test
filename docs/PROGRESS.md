@@ -14,7 +14,7 @@
 | P2-04 | R02,R03,R10 | frontend | PASS (--full, M1) | PASS | see git log | DONE — M1 closed |
 | P3-01 | R06,R07,R08 | frontend | PASS (--full pre-loop; targeted e2e + quick gate post-loop) | PASS (after 1 fix loop) | see git log | DONE |
 | P3-02 | R06,R07 | frontend | — | — | — | TODO (favorites, profile/avatar/password, wallets; closes M2) |
-| P4-01 | R04 | frontend | — | — | — | TODO (cart limits, guest persistence + merge, coupon) |
+| P4-01 | R04,R07,R08 | frontend | PASS (quick gate + cart/detail/auth/shell e2e) | deferred (ADR-009 final review) | see git log | DONE |
 | P4-02 | R05 | frontend | — | — | — | TODO (quote revalidation, wallet/network, payment, idempotent order) |
 | P4-03 | R05 | frontend | — | — | — | TODO (pending/declined/confirmed immutable receipt; closes M3) |
 | P5-01 | R09 | integration | — | — | — | TODO (socket.io-client mock transport, nft/order events, versioning, reconnect; closes M4) |

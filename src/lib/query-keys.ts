@@ -1,4 +1,7 @@
-import type { CatalogQuery } from '@/contracts'
+import type { CatalogQuery, Network } from '@/contracts'
+
+/** Cart owner segment: `user:<id>` or `guest:<uuid>` (ADR-004). */
+export type CartOwnerKey = `user:${string}` | `guest:${string}`
 
 /**
  * Query key factory (ADR-004, docs/API_CONTRACTS.md "Cache and query keys").
@@ -12,7 +15,13 @@ export const queryKeys = {
   /** Prefix of every private, user-scoped key (`['user', userId, ...]`). */
   user: { all: ['user'] as const },
   /** Prefix of every owner-scoped cart/quote key (`['cart', ownerKey, ...]`). */
-  cart: { all: ['cart'] as const },
+  cart: {
+    all: ['cart'] as const,
+    owner: (ownerKey: CartOwnerKey) => ['cart', ownerKey] as const,
+    quotes: (ownerKey: CartOwnerKey) => ['cart', ownerKey, 'quote'] as const,
+    quote: (ownerKey: CartOwnerKey, params: { network: Network; cartVersion: number }) =>
+      ['cart', ownerKey, 'quote', params] as const,
+  },
   catalog: {
     all: ['catalog'] as const,
     lists: () => ['catalog', 'list'] as const,

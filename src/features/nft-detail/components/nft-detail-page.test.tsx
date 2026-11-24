@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { setScenario } from '@/mocks/scenario'
 import { renderApp } from '@/test/render-app'
 import { APP_READY_TIMEOUT, APP_TEST_TIMEOUT } from '@/test/timeouts'
@@ -15,6 +15,9 @@ function desktopStepper() {
 }
 
 describe('NFT detail page', { timeout: APP_TEST_TIMEOUT }, () => {
+  // Guest cart id / session must not leak between tests.
+  beforeEach(() => window.localStorage.clear())
+
   it('renders the API data with a single h1 and updates the document title', async () => {
     await readyDetail()
     const h1 = screen.getAllByRole('heading', { level: 1 })
@@ -77,17 +80,39 @@ describe('NFT detail page', { timeout: APP_TEST_TIMEOUT }, () => {
     expect(screen.getAllByTestId('nft-price')[0]?.parentElement).toHaveTextContent('2.29 ETH')
   })
 
-  it('renders COMPRAR, Favoritar and cart as unavailable actions without side effects', async () => {
+  it('keeps Favoritar unavailable without side effects', async () => {
     const { router } = await readyDetail()
     const before = router.state.location.href
-    for (const name of [/^COMPRAR/, /^Favoritar/, /^Comprar NFT/, /Adicionar ao carrinho/]) {
-      for (const button of screen.getAllByRole('button', { name })) {
-        expect(button).toHaveAttribute('aria-disabled', 'true')
-        expect(button).toHaveAccessibleName(/\(em breve\)/)
-        fireEvent.click(button)
-      }
+    for (const button of screen.getAllByRole('button', { name: /^Favoritar/ })) {
+      expect(button).toHaveAttribute('aria-disabled', 'true')
+      expect(button).toHaveAccessibleName(/\(em breve\)/)
+      fireEvent.click(button)
     }
     expect(router.state.location.href).toBe(before)
+  })
+
+  it('adds the selection to the cart (cart icon) and updates the header badge (P4-01)', async () => {
+    await readyDetail()
+    fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Edição:' })).getByRole('radio', { name: '1/50' }))
+    fireEvent.click(within(desktopStepper()).getByRole('button', { name: 'Aumentar quantidade' }))
+    const add = screen.getByRole('button', { name: 'Adicionar ao carrinho' })
+    // Double click: one request (the second click is ignored while pending).
+    fireEvent.click(add)
+    fireEvent.click(add)
+    // Desktop and mobile bars share the feedback (one of them is hidden by CSS in a browser).
+    const [feedback] = await screen.findAllByTestId('add-to-cart-success', {}, { timeout: APP_READY_TIMEOUT })
+    expect(feedback).toHaveTextContent('2 unidades adicionadas ao carrinho.')
+    await waitFor(() => expect(screen.getAllByRole('link', { name: 'Carrinho, 2 itens' }).length).toBeGreaterThan(0), {
+      timeout: APP_READY_TIMEOUT,
+    })
+    expect(window.localStorage.getItem('kurio.guestCartId')).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('COMPRAR adds the selection and opens the cart', async () => {
+    const { router } = await readyDetail()
+    fireEvent.click(screen.getByRole('button', { name: 'COMPRAR' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/carrinho'), { timeout: APP_READY_TIMEOUT })
+    expect(await screen.findAllByTestId('cart-line', {}, { timeout: APP_READY_TIMEOUT })).toHaveLength(1)
   })
 
   it('switches the main image from the thumbnails and opens the zoom dialog', async () => {

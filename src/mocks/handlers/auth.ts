@@ -10,6 +10,7 @@ import {
 } from '@/contracts'
 import { getDb, reloadDb, updateDb } from '../db'
 import type { UserRecord } from '../fixtures/users'
+import { mergeGuestCart } from '../cart-store'
 import { apiPath, errorResponse } from '../http'
 import { hashPassword, verifyPassword } from '../password'
 import { authenticate, createSession, randomHex, readBearerToken, revokeSession } from '../sessions'
@@ -37,10 +38,13 @@ function nextUserId(users: readonly UserRecord[]): string {
   return `usr_${String(max + 1).padStart(3, '0')}`
 }
 
-function authResponse(session: AuthResponse['session']): AuthResponse {
-  // Cart merge belongs to the cart slice (ADR-006, P4-01): `guestCartId` is
-  // accepted and validated, and no merge is reported yet.
-  return { session, cartMerge: null }
+/**
+ * ADR-006: the guest cart is merged into the user's cart as part of a
+ * successful login/register (never on failure, so no data is lost).
+ */
+function authResponse(session: AuthResponse['session'], guestCartId: string | undefined): AuthResponse {
+  const cartMerge = guestCartId ? mergeGuestCart(guestCartId, session.user.id) : null
+  return { session, cartMerge }
 }
 
 /** Session and account endpoints (docs/API_CONTRACTS.md "Session and account"). */
@@ -52,7 +56,7 @@ export const authHandlers = [
     if (!parsed.success) {
       return errorResponse(422, 'VALIDATION_ERROR', 'Invalid registration.', toFieldErrorsDetails(parsed.error))
     }
-    const { username, email, password } = parsed.data
+    const { username, email, password, guestCartId } = parsed.data
 
     reloadDb()
     const users = getDb().users
@@ -75,7 +79,7 @@ export const authHandlers = [
       state.users = [...state.users, record]
     })
     const session = await createSession(record)
-    return HttpResponse.json<AuthResponse>(authResponse(session), { status: 201 })
+    return HttpResponse.json<AuthResponse>(authResponse(session, guestCartId), { status: 201 })
   }),
 
   http.post<PathParams, DefaultBodyType, AuthResponse | ErrorEnvelope>(apiPath('/auth/login'), async ({ request }) => {
@@ -85,7 +89,7 @@ export const authHandlers = [
     if (!parsed.success) {
       return errorResponse(422, 'VALIDATION_ERROR', 'Invalid login.', toFieldErrorsDetails(parsed.error))
     }
-    const { email, password } = parsed.data
+    const { email, password, guestCartId } = parsed.data
 
     reloadDb()
     const record = getDb().users.find((u) => u.user.email === email)
@@ -97,7 +101,7 @@ export const authHandlers = [
       return errorResponse(401, 'INVALID_CREDENTIALS', 'Invalid email or password.')
     }
     const session = await createSession(record)
-    return HttpResponse.json<AuthResponse>(authResponse(session))
+    return HttpResponse.json<AuthResponse>(authResponse(session, guestCartId))
   }),
 
   http.get<PathParams, DefaultBodyType, SessionInfo | ErrorEnvelope>(apiPath('/auth/session'), async ({ request }) => {

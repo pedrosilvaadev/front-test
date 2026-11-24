@@ -1,5 +1,14 @@
 import { z } from 'zod'
-import { idSchema, isoDateTimeSchema, nftDetailSchema, type NftDetail } from '@/contracts'
+import {
+  guestCartIdSchema,
+  idSchema,
+  isoDateTimeSchema,
+  nftDetailSchema,
+  quantitySchema,
+  quoteSchema,
+  versionSchema,
+  type NftDetail,
+} from '@/contracts'
 import { createNftSeed } from './fixtures/nfts'
 import { SEED_USERS, userRecordSchema, type UserRecord } from './fixtures/users'
 
@@ -17,7 +26,7 @@ import { SEED_USERS, userRecordSchema, type UserRecord } from './fixtures/users'
  * in a way that old snapshots must not survive.
  */
 export const DB_STORAGE_KEY = 'kurio.mockDb'
-export const DB_SCHEMA_VERSION = 3
+export const DB_SCHEMA_VERSION = 4
 
 /**
  * Server-side session (ADR-005). Only the SHA-256 of the opaque bearer token
@@ -33,11 +42,38 @@ export const sessionRecordSchema = z.object({
 })
 export type SessionRecord = z.infer<typeof sessionRecordSchema>
 
+/**
+ * Server-side cart (ADR-006). Owned by a user (`userId`) or a guest
+ * (`guestCartId`, client generated UUID). Stores only references and
+ * quantities; the catalog snapshot and totals are computed per response.
+ * `coupon` is the normalized code; its details come from `coupons.ts`.
+ */
+export const cartRecordSchema = z.object({
+  id: idSchema,
+  owner: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('user'), userId: idSchema }),
+    z.object({ kind: z.literal('guest'), guestCartId: guestCartIdSchema }),
+  ]),
+  items: z.array(z.object({ id: idSchema, nftId: idSchema, editionId: idSchema, quantity: quantitySchema })),
+  coupon: z.string().min(1).nullable(),
+  version: versionSchema,
+  updatedAt: isoDateTimeSchema,
+})
+export type CartRecord = z.infer<typeof cartRecordSchema>
+
+/** Issued quote with the owner key it belongs to (`user:<id>` | `guest:<uuid>`). */
+export const quoteRecordSchema = z.object({ ownerKey: z.string().min(1), quote: quoteSchema })
+export type QuoteRecord = z.infer<typeof quoteRecordSchema>
+
 export interface MockDbState {
   nfts: NftDetail[]
   users: UserRecord[]
   /** Persisted so sessions survive a reload (README §3); cleared by `resetDb`. */
   sessions: SessionRecord[]
+  /** Guest and user carts (P4-01); cleared by `resetDb`. */
+  carts: CartRecord[]
+  /** Recently issued quotes (pruned after expiry); referenced by `previousQuoteId` and orders. */
+  quotes: QuoteRecord[]
 }
 
 export interface MockDb extends MockDbState {
@@ -53,6 +89,8 @@ const persistedSchema = z.object({
     nfts: z.array(nftDetailSchema),
     users: z.array(userRecordSchema),
     sessions: z.array(sessionRecordSchema),
+    carts: z.array(cartRecordSchema),
+    quotes: z.array(quoteRecordSchema),
   }),
 })
 
@@ -62,6 +100,8 @@ export function createSeedState(): MockDbState {
     nfts: createNftSeed(),
     users: SEED_USERS.map((record) => structuredClone(record)),
     sessions: [],
+    carts: [],
+    quotes: [],
   }
 }
 
@@ -82,9 +122,12 @@ function loadState(source: DbStorage): MockDbState | undefined {
 
 function persist(): void {
   if (!storage) return
-  const { nfts, users, sessions } = db
+  const { nfts, users, sessions, carts, quotes } = db
   try {
-    storage.setItem(DB_STORAGE_KEY, JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users, sessions } }))
+    storage.setItem(
+      DB_STORAGE_KEY,
+      JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users, sessions, carts, quotes } }),
+    )
   } catch {
     // Quota exceeded / privacy mode: keep working in memory.
   }

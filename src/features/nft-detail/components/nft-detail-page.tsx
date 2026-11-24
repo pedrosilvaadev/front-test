@@ -4,6 +4,7 @@ import { ChevronLeft, Heart, Mail, ShoppingCart, Star } from 'lucide-react'
 import { useEffect } from 'react'
 import { LinkedinIcon, TwitterIcon } from '@/components/layout/social-icons'
 import type { NftDetail } from '@/contracts'
+import { usePurchaseActions, type PurchaseActions } from '@/features/cart/use-purchase-actions'
 import { formatEth, mulEth } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { detailFailure, nftDetailQueryOptions } from '../detail-queries'
@@ -13,6 +14,7 @@ import { DetailTabs } from './detail-tabs'
 import { NftDetailError, NftDetailSkeleton, NftNotFound } from './detail-states'
 import { EditionPicker } from './edition-picker'
 import { NftGallery } from './nft-gallery'
+import { PurchaseFeedback } from './purchase-actions'
 import { QuantityStepper } from './quantity-stepper'
 import { RatingStars } from './rating-stars'
 import { RelatedNfts } from './related-nfts'
@@ -161,29 +163,44 @@ function ShareLinks({ nft }: { nft: NftDetail }) {
   )
 }
 
-function DesktopPurchase({ selection }: { selection: PurchaseSelection }) {
+const buyButtonDisabled = 'disabled:cursor-not-allowed disabled:opacity-50 aria-busy:opacity-70'
+
+function DesktopPurchase({ selection, actions }: { selection: PurchaseSelection; actions: PurchaseActions }) {
   return (
-    <div className="hidden flex-wrap items-center justify-between gap-4 md:flex" data-testid="desktop-purchase">
-      <QuantityStepper selection={selection} />
-      <div className="flex flex-wrap items-center gap-2">
-        <UnavailableButton className="h-10 min-w-[7.25rem] rounded-sm bg-primary px-6 text-[0.8125rem] font-bold tracking-[0.04em] text-primary-foreground">
-          COMPRAR
-        </UnavailableButton>
+    <div className="hidden flex-col gap-2 md:flex" data-testid="desktop-purchase">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <QuantityStepper selection={selection} />
+        <div className="flex flex-wrap items-center gap-2">
+          {/* P4-01: adds the selected edition × quantity and opens the cart. */}
+          <button
+            type="button"
+            disabled={actions.disabled}
+            aria-busy={actions.pending || undefined}
+            onClick={() => actions.addSelected({ goToCart: true })}
+            className={cn(
+              'h-10 min-w-[7.25rem] rounded-sm bg-primary px-6 text-[0.8125rem] font-bold tracking-[0.04em] text-primary-foreground outline-none hover:bg-brand focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              buyButtonDisabled,
+            )}
+          >
+            COMPRAR
+          </button>
         <UnavailableButton className="inline-flex h-10 items-center gap-2 rounded-sm border border-primary px-3 text-[0.8125rem] tracking-[0.04em] text-brand">
           <Heart className="size-5" aria-hidden="true" />
           Favoritar
         </UnavailableButton>
+        </div>
       </div>
+      <PurchaseFeedback actions={actions} />
     </div>
   )
 }
 
 /**
  * Mobile sticky bar (Figma): Qtd stepper + subtotal (decimal `mulEth`),
- * "Comprar NFT" and cart (P4-01). It sits flush on top of the global tab bar
+ * "Comprar NFT" (add + open the cart) and cart icon (add, stay) (P4-01). It sits flush on top of the global tab bar
  * (same surface colour) and its bottom padding clears the raised scan button.
  */
-function MobileBuyBar({ nft, selection }: { nft: NftDetail; selection: PurchaseSelection }) {
+function MobileBuyBar({ nft, selection, actions }: { nft: NftDetail; selection: PurchaseSelection; actions: PurchaseActions }) {
   const subtotal = mulEth(nft.price, selection.quantity)
   return (
     <div
@@ -202,16 +219,33 @@ function MobileBuyBar({ nft, selection }: { nft: NftDetail; selection: PurchaseS
           {formatEth(subtotal)}
         </p>
       </div>
+      <PurchaseFeedback actions={actions} />
       <div className="flex items-center gap-3">
-        <UnavailableButton className="h-12 flex-1 rounded-full bg-linear-to-r from-primary to-[#a66d3c] text-[0.9375rem] font-bold tracking-[0.04em] text-primary-foreground">
+        <button
+          type="button"
+          disabled={actions.disabled}
+          aria-busy={actions.pending || undefined}
+          onClick={() => actions.addSelected({ goToCart: true })}
+          className={cn(
+            'h-12 flex-1 rounded-full bg-linear-to-r from-primary to-[#a66d3c] text-[0.9375rem] font-bold tracking-[0.04em] text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            buyButtonDisabled,
+          )}
+        >
           Comprar NFT
-        </UnavailableButton>
-        <UnavailableButton
-          label="Adicionar ao carrinho"
-          className="inline-flex size-12 shrink-0 items-center justify-center rounded-full border border-border-accent text-brand"
+        </button>
+        <button
+          type="button"
+          aria-label="Adicionar ao carrinho"
+          disabled={actions.disabled}
+          aria-busy={actions.pending || undefined}
+          onClick={() => actions.addSelected()}
+          className={cn(
+            'inline-flex size-12 shrink-0 items-center justify-center rounded-full border border-border-accent text-brand outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
+            buyButtonDisabled,
+          )}
         >
           <ShoppingCart className="size-5" aria-hidden="true" />
-        </UnavailableButton>
+        </button>
       </div>
     </div>
   )
@@ -220,6 +254,7 @@ function MobileBuyBar({ nft, selection }: { nft: NftDetail; selection: PurchaseS
 /** `idOrSlug` is the route param, so related NFTs reuse the key the loader prefetched. */
 function NftDetailContent({ nft, idOrSlug }: { nft: NftDetail; idOrSlug: string }) {
   const selection = usePurchaseSelection(nft.editions)
+  const actions = usePurchaseActions(nft, selection)
   const reviews = reviewsLabel(nft.rating.count)
 
   return (
@@ -264,7 +299,7 @@ function NftDetailContent({ nft, idOrSlug }: { nft: NftDetail; idOrSlug: string 
             </section>
 
             <EditionPicker editions={nft.editions} selection={selection} />
-            <DesktopPurchase selection={selection} />
+            <DesktopPurchase selection={selection} actions={actions} />
 
             <dl className="flex flex-col gap-2 text-[0.9375rem] tracking-[0.02em] text-subtle-foreground md:text-[0.8125rem]">
               <div>
@@ -287,7 +322,7 @@ function NftDetailContent({ nft, idOrSlug }: { nft: NftDetail; idOrSlug: string 
 
       <DetailTabs nft={nft} />
       <RelatedNfts idOrSlug={idOrSlug} />
-      <MobileBuyBar nft={nft} selection={selection} />
+      <MobileBuyBar nft={nft} selection={selection} actions={actions} />
     </article>
   )
 }

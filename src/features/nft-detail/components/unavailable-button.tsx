@@ -8,7 +8,7 @@ interface UnavailableButtonProps extends Omit<React.ComponentProps<'button'>, 'o
 }
 
 /**
- * Action owned by a later slice (COMPRAR → P4-01, Favoritar → P3-02, cart).
+ * Action owned by a later slice (Favoritar → P3-02, checkout → P4-02).
  * Same contract as `UnavailableLink`: focusable, announced as disabled,
  * "(em breve)" in the accessible name, and clicking does nothing (no fake
  * success, no request).

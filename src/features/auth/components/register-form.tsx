@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState, type FormEvent } from 'react'
 import { register } from '@/api/auth'
+import { withGuestCart } from '@/features/cart/guest-cart-id'
 import type { AuthResponse, RegisterRequest } from '@/contracts'
 import {
   mapAuthError,
@@ -37,7 +38,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   // `gcTime: 0` + `reset()` on success: the variables hold the plaintext password,
   // so they must not linger in the MutationCache (the session manager also clears it).
-  const mutation = useMutation({ mutationFn: (body: RegisterRequest) => register(body), retry: false, gcTime: 0 })
+  const mutation = useMutation({ mutationFn: (body: RegisterRequest) => register(withGuestCart(body)), retry: false, gcTime: 0 })
 
   function focusFirst(fieldErrors: FieldErrors<RegisterField>) {
     const first = FIELDS.find((field) => fieldErrors[field])

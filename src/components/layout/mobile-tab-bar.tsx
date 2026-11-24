@@ -1,25 +1,19 @@
 import { Link } from '@tanstack/react-router'
-import { Heart, House, ScanLine, ShoppingCart, User } from 'lucide-react'
+import { Heart, House, ScanLine, User } from 'lucide-react'
+import { CartNavLink } from '@/features/cart/components/cart-chrome'
 import { cn } from '@/lib/utils'
-import { CartBadge } from './cart-badge'
-import { cartLabel } from './cart-label'
 import { PlannedRouteLink } from './planned-route-link'
 import { PLANNED_ROUTES, UNAVAILABLE_SUFFIX } from './planned-routes'
 
 const itemClass =
   'relative flex size-11 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:text-brand'
 
-interface MobileTabBarProps {
-  /** Units in the cart; owned by the cart slice. Omitted → no badge. */
-  cartCount?: number
-}
-
 /**
  * Fixed bottom navigation for viewports below `md` (Figma mobile "Início").
  * Height is `--tab-bar-height` plus the bottom safe-area inset; the layout
  * reserves the same space so content is never hidden behind it.
  */
-export function MobileTabBar({ cartCount }: MobileTabBarProps) {
+export function MobileTabBar() {
   return (
     <nav
       aria-label="Principal"
@@ -57,10 +51,8 @@ export function MobileTabBar({ cartCount }: MobileTabBarProps) {
           </button>
         </li>
         <li>
-          <PlannedRouteLink to={PLANNED_ROUTES.cart} aria-label={cartLabel(cartCount)} className={itemClass}>
-            <ShoppingCart className="size-6" aria-hidden="true" />
-            <CartBadge count={cartCount} className="top-1 right-0.5" />
-          </PlannedRouteLink>
+          {/* P4-01: cart with the current owner's item count. */}
+          <CartNavLink className={itemClass} badgeClassName="top-1 right-0.5" />
         </li>
         <li>
           {/* P3-01: guests are sent to login by the `_authed` guard and come back here. */}
