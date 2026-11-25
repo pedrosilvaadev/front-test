@@ -14,7 +14,9 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedCarteirasRouteImport } from './routes/_authed/carteiras'
 import { Route as AuthedCheckoutRouteImport } from './routes/_authed/checkout'
+import { Route as AuthedFavoritosRouteImport } from './routes/_authed/favoritos'
 import { Route as AuthedPerfilRouteImport } from './routes/_authed/perfil'
 import { Route as NftIdOrSlugRouteImport } from './routes/nft.$idOrSlug'
 import { Route as AuthedPedidosOrderIdRouteImport } from './routes/_authed/pedidos.$orderId'
@@ -43,9 +45,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedCarteirasRoute = AuthedCarteirasRouteImport.update({
+  id: '/carteiras',
+  path: '/carteiras',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedCheckoutRoute = AuthedCheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedFavoritosRoute = AuthedFavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedPerfilRoute = AuthedPerfilRouteImport.update({
@@ -69,7 +81,9 @@ export interface FileRoutesByFullPath {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/carteiras': typeof AuthedCarteirasRoute
   '/checkout': typeof AuthedCheckoutRoute
+  '/favoritos': typeof AuthedFavoritosRoute
   '/perfil': typeof AuthedPerfilRoute
   '/nft/$idOrSlug': typeof NftIdOrSlugRoute
   '/pedidos/$orderId': typeof AuthedPedidosOrderIdRoute
@@ -79,7 +93,9 @@ export interface FileRoutesByTo {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/carteiras': typeof AuthedCarteirasRoute
   '/checkout': typeof AuthedCheckoutRoute
+  '/favoritos': typeof AuthedFavoritosRoute
   '/perfil': typeof AuthedPerfilRoute
   '/nft/$idOrSlug': typeof NftIdOrSlugRoute
   '/pedidos/$orderId': typeof AuthedPedidosOrderIdRoute
@@ -91,7 +107,9 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/_authed/carteiras': typeof AuthedCarteirasRoute
   '/_authed/checkout': typeof AuthedCheckoutRoute
+  '/_authed/favoritos': typeof AuthedFavoritosRoute
   '/_authed/perfil': typeof AuthedPerfilRoute
   '/nft/$idOrSlug': typeof NftIdOrSlugRoute
   '/_authed/pedidos/$orderId': typeof AuthedPedidosOrderIdRoute
@@ -103,7 +121,9 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/login'
+    | '/carteiras'
     | '/checkout'
+    | '/favoritos'
     | '/perfil'
     | '/nft/$idOrSlug'
     | '/pedidos/$orderId'
@@ -113,7 +133,9 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/login'
+    | '/carteiras'
     | '/checkout'
+    | '/favoritos'
     | '/perfil'
     | '/nft/$idOrSlug'
     | '/pedidos/$orderId'
@@ -124,7 +146,9 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/login'
+    | '/_authed/carteiras'
     | '/_authed/checkout'
+    | '/_authed/favoritos'
     | '/_authed/perfil'
     | '/nft/$idOrSlug'
     | '/_authed/pedidos/$orderId'
@@ -176,11 +200,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/carteiras': {
+      id: '/_authed/carteiras'
+      path: '/carteiras'
+      fullPath: '/carteiras'
+      preLoaderRoute: typeof AuthedCarteirasRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/checkout': {
       id: '/_authed/checkout'
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof AuthedCheckoutRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/favoritos': {
+      id: '/_authed/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof AuthedFavoritosRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/perfil': {
@@ -208,13 +246,17 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthedRouteChildren {
+  AuthedCarteirasRoute: typeof AuthedCarteirasRoute
   AuthedCheckoutRoute: typeof AuthedCheckoutRoute
+  AuthedFavoritosRoute: typeof AuthedFavoritosRoute
   AuthedPerfilRoute: typeof AuthedPerfilRoute
   AuthedPedidosOrderIdRoute: typeof AuthedPedidosOrderIdRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedCarteirasRoute: AuthedCarteirasRoute,
   AuthedCheckoutRoute: AuthedCheckoutRoute,
+  AuthedFavoritosRoute: AuthedFavoritosRoute,
   AuthedPerfilRoute: AuthedPerfilRoute,
   AuthedPedidosOrderIdRoute: AuthedPedidosOrderIdRoute,
 }

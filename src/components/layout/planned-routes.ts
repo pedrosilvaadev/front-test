@@ -1,15 +1,12 @@
 /**
  * `/carrinho` is registered since P4-01 (header and tab bar use `<Link>`).
  *
- * Internal paths of screens delivered by later slices (favorites).
- * They are not registered in the route tree yet, so they currently render
- * the not-found page; TanStack's typed `<Link to>` rejects unregistered
- * paths, hence `PlannedRouteLink` uses a plain anchor until the owning slice
- * adds the route and switches the call sites to `<Link>`.
+ * `/favoritos` and `/carteiras` are registered since P3-02 (tab bar and the
+ * account menu use `<Link>`).
  *
  * `/perfil` and `/login` are registered since P3-01 (header and tab bar use
- * `<Link>`); `profile` stays here only for the footer's plain link, which
- * still works as a full page load (owned by the footer).
+ * `<Link>`); `favorites`/`profile` stay here only for the footer's plain
+ * links, which work as full page loads.
  */
 export const PLANNED_ROUTES = {
   favorites: '/favoritos',

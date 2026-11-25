@@ -34,9 +34,10 @@ async function expectProfile(page: Page, user: { email: string; username: string
   await expect(page).toHaveURL(/\/perfil$/, READY)
   const profile = page.getByTestId('profile-summary')
   await expect(profile).toBeVisible(READY)
-  await expect(profile.getByTestId('profile-email')).toHaveText(user.email)
-  await expect(profile.getByTestId('profile-username')).toHaveText(user.username)
-  await expect(profile.getByTestId('profile-display-name')).toHaveText(user.displayName)
+  // P3-02: the profile is an editable form (values come from GET /api/profile).
+  await expect(profile.getByLabel('E-mail')).toHaveValue(user.email, READY)
+  await expect(profile.getByLabel('Nome de usuário')).toHaveValue(user.username)
+  await expect(profile.getByLabel('Nome de exibição')).toHaveValue(user.displayName)
 }
 
 async function storedSession(page: Page): Promise<string | null> {
@@ -58,6 +59,10 @@ async function goHomeFromChrome(page: Page, isMobile: boolean): Promise<void> {
   if (isMobile) await page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Início' }).click()
   else await page.getByRole('banner').getByRole('link', { name: 'KURIO' }).click()
   await expect(page).toHaveURL(/\/$/, READY)
+  // P3-02: catalog hearts load the user's favorites; wait until that authenticated
+  // request settled so a later forced expiry is observed by the test's own navigation.
+  await expect(page.locator('main button[aria-pressed][data-state]').first()).toBeVisible(READY)
+  await expect(page.locator('main button[aria-pressed][data-state="unknown"]')).toHaveCount(0, READY)
 }
 
 async function logoutFromProfile(page: Page): Promise<void> {

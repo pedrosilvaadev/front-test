@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
-import { ChevronLeft, Heart, Mail, ShoppingCart, Star } from 'lucide-react'
+import { ChevronLeft, Mail, ShoppingCart, Star } from 'lucide-react'
 import { useEffect } from 'react'
 import { LinkedinIcon, TwitterIcon } from '@/components/layout/social-icons'
 import type { NftDetail } from '@/contracts'
 import { usePurchaseActions, type PurchaseActions } from '@/features/cart/use-purchase-actions'
+import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { formatEth, mulEth } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { detailFailure, nftDetailQueryOptions } from '../detail-queries'
@@ -18,7 +19,6 @@ import { PurchaseFeedback } from './purchase-actions'
 import { QuantityStepper } from './quantity-stepper'
 import { RatingStars } from './rating-stars'
 import { RelatedNfts } from './related-nfts'
-import { UnavailableButton } from './unavailable-button'
 
 const APP_NAME = 'Kurio'
 
@@ -79,8 +79,8 @@ function Breadcrumb() {
 const roundIconClass =
   'inline-flex size-10 items-center justify-center rounded-full border border-border-accent bg-background/80 text-foreground outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring'
 
-/** Mobile overlay on the art: back (history back, `/` when opened directly) and favorite (P3-02). */
-function MobileTopActions() {
+/** Mobile overlay on the art: back (history back, `/` when opened directly) and favorite heart (P3-02). */
+function MobileTopActions({ nft }: { nft: NftDetail }) {
   const canGoBack = useCanGoBack()
   const router = useRouter()
   const navigate = useNavigate()
@@ -97,9 +97,11 @@ function MobileTopActions() {
       >
         <ChevronLeft className="size-5" aria-hidden="true" />
       </button>
-      <UnavailableButton label="Favoritar" className={cn(roundIconClass, 'pointer-events-auto')}>
-        <Heart className="size-5" aria-hidden="true" />
-      </UnavailableButton>
+      <FavoriteButton
+        nft={nft}
+        testId="nft-favorite-mobile"
+        className={cn(roundIconClass, 'pointer-events-auto aria-pressed:text-brand')}
+      />
     </div>
   )
 }
@@ -165,7 +167,7 @@ function ShareLinks({ nft }: { nft: NftDetail }) {
 
 const buyButtonDisabled = 'disabled:cursor-not-allowed disabled:opacity-50 aria-busy:opacity-70'
 
-function DesktopPurchase({ selection, actions }: { selection: PurchaseSelection; actions: PurchaseActions }) {
+function DesktopPurchase({ nft, selection, actions }: { nft: NftDetail; selection: PurchaseSelection; actions: PurchaseActions }) {
   return (
     <div className="hidden flex-col gap-2 md:flex" data-testid="desktop-purchase">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -184,10 +186,14 @@ function DesktopPurchase({ selection, actions }: { selection: PurchaseSelection;
           >
             COMPRAR
           </button>
-        <UnavailableButton className="inline-flex h-10 items-center gap-2 rounded-sm border border-primary px-3 text-[0.8125rem] tracking-[0.04em] text-brand">
-          <Heart className="size-5" aria-hidden="true" />
+        <FavoriteButton
+          nft={nft}
+          testId="nft-favorite"
+          visibleError
+          className="inline-flex h-10 items-center gap-2 rounded-sm border border-primary px-3 text-[0.8125rem] tracking-[0.04em] text-brand outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring aria-pressed:bg-primary/15"
+        >
           Favoritar
-        </UnavailableButton>
+        </FavoriteButton>
         </div>
       </div>
       <PurchaseFeedback actions={actions} />
@@ -262,7 +268,7 @@ function NftDetailContent({ nft, idOrSlug }: { nft: NftDetail; idOrSlug: string 
       <div className="flex flex-col gap-3">
         <Breadcrumb />
         <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-8 lg:grid-cols-[minmax(0,35.5rem)_minmax(0,1fr)] lg:gap-[1.875rem]">
-          <NftGallery nft={nft} overlay={<MobileTopActions />} />
+          <NftGallery nft={nft} overlay={<MobileTopActions nft={nft} />} />
 
           <div className="relative z-10 -mx-6 -mt-8 flex min-w-0 flex-col gap-4 rounded-t-[2rem] bg-card px-6 pt-7 pb-4 md:mx-0 md:mt-0 md:gap-3.5 md:rounded-none md:bg-transparent md:p-0">
             <div className="flex items-start justify-between gap-3">
@@ -299,7 +305,7 @@ function NftDetailContent({ nft, idOrSlug }: { nft: NftDetail; idOrSlug: string 
             </section>
 
             <EditionPicker editions={nft.editions} selection={selection} />
-            <DesktopPurchase selection={selection} actions={actions} />
+            <DesktopPurchase nft={nft} selection={selection} actions={actions} />
 
             <dl className="flex flex-col gap-2 text-[0.9375rem] tracking-[0.02em] text-subtle-foreground md:text-[0.8125rem]">
               <div>

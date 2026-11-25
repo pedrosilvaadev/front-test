@@ -15,6 +15,8 @@ export const queryKeys = {
   /** Prefix of every private, user-scoped key (`['user', userId, ...]`). */
   user: {
     all: ['user'] as const,
+    favorites: (userId: string) => ['user', userId, 'favorites'] as const,
+    profile: (userId: string) => ['user', userId, 'profile'] as const,
     wallets: (userId: string) => ['user', userId, 'wallets'] as const,
     order: (userId: string, orderId: string) => ['user', userId, 'orders', orderId] as const,
     orderList: (userId: string, status?: string) => ['user', userId, 'orders', 'list', { status }] as const,

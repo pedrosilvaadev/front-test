@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { NftSummary } from '@/contracts'
+import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { formatEth } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { RARITY_LABELS } from '../labels'
@@ -37,6 +38,13 @@ export function NftCard({ nft, eager = false }: NftCardProps) {
             {RARITY_LABELS[nft.rarity]}
           </span>
         ) : null}
+        {/* P3-02: above the stretched link so it stays clickable. */}
+        <FavoriteButton
+          nft={nft}
+          testId="nft-card-favorite"
+          className="absolute top-3 right-3 z-10 inline-flex size-9 items-center justify-center rounded-full border border-border-accent bg-background/80 text-foreground outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring aria-pressed:text-brand"
+          iconClassName="size-4"
+        />
       </div>
       <h3 className="mt-3 truncate text-[0.9375rem] tracking-[0.02em] text-foreground md:mt-4">
         <Link

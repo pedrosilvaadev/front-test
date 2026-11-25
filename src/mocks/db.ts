@@ -29,7 +29,7 @@ import { SEED_WALLETS } from './fixtures/wallets'
  * in a way that old snapshots must not survive.
  */
 export const DB_STORAGE_KEY = 'kurio.mockDb'
-export const DB_SCHEMA_VERSION = 5
+export const DB_SCHEMA_VERSION = 6
 
 /**
  * Server-side session (ADR-005). Only the SHA-256 of the opaque bearer token
@@ -69,6 +69,23 @@ export const quoteRecordSchema = z.object({ ownerKey: z.string().min(1), quote: 
 export type QuoteRecord = z.infer<typeof quoteRecordSchema>
 
 export const walletRecordSchema = z.object({ userId: idSchema, wallet: walletSchema })
+
+/** Favorite of a user (P3-02); the NFT summary is computed per response. */
+export const favoriteRecordSchema = z.object({ userId: idSchema, nftId: idSchema, createdAt: isoDateTimeSchema })
+export type FavoriteRecord = z.infer<typeof favoriteRecordSchema>
+
+/**
+ * Profile fields not carried by the session `User` (P3-02). `displayName`,
+ * `username`, `email` and `avatarUrl` live on the user record (they are
+ * returned by `GET /api/auth/session`). Missing record = registration defaults.
+ */
+export const profileRecordSchema = z.object({
+  userId: idSchema,
+  ensName: z.string().min(1).nullable(),
+  walletNickname: z.string().min(1).nullable(),
+  updatedAt: isoDateTimeSchema,
+})
+export type ProfileRecord = z.infer<typeof profileRecordSchema>
 export type WalletRecord = z.infer<typeof walletRecordSchema>
 
 /**
@@ -118,6 +135,10 @@ export interface MockDbState {
   wallets: WalletRecord[]
   /** Orders with idempotency records (P4-02). */
   orders: OrderRecord[]
+  /** Favorites per user (P3-02). */
+  favorites: FavoriteRecord[]
+  /** Extra profile fields per user (P3-02). */
+  profiles: ProfileRecord[]
   checkoutControls: CheckoutControls
 }
 
@@ -138,6 +159,8 @@ const persistedSchema = z.object({
     quotes: z.array(quoteRecordSchema),
     wallets: z.array(walletRecordSchema),
     orders: z.array(orderRecordSchema),
+    favorites: z.array(favoriteRecordSchema),
+    profiles: z.array(profileRecordSchema),
     checkoutControls: checkoutControlsSchema,
   }),
 })
@@ -152,6 +175,8 @@ export function createSeedState(): MockDbState {
     quotes: [],
     wallets: SEED_WALLETS.map((record) => structuredClone(record)),
     orders: [],
+    favorites: [],
+    profiles: [],
     checkoutControls: { ...DEFAULT_CHECKOUT_CONTROLS },
   }
 }
@@ -173,11 +198,11 @@ function loadState(source: DbStorage): MockDbState | undefined {
 
 function persist(): void {
   if (!storage) return
-  const { nfts, users, sessions, carts, quotes, wallets, orders, checkoutControls } = db
+  const { nfts, users, sessions, carts, quotes, wallets, orders, favorites, profiles, checkoutControls } = db
   try {
     storage.setItem(
       DB_STORAGE_KEY,
-      JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users, sessions, carts, quotes, wallets, orders, checkoutControls } }),
+      JSON.stringify({ schemaVersion: DB_SCHEMA_VERSION, state: { nfts, users, sessions, carts, quotes, wallets, orders, favorites, profiles, checkoutControls } }),
     )
   } catch {
     // Quota exceeded / privacy mode: keep working in memory.

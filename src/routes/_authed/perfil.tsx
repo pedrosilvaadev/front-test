@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ProfileSummary } from '@/features/auth/components/profile-summary'
+import { ProfilePage } from '@/features/profile/components/profile-page'
 
-/** Minimal protected profile (P3-01). The full profile/edit screen is P3-02. */
+/** Collector profile (`/perfil`, P3-02; Figma "Perfil do colecionador"). Private (`_authed`). */
 export const Route = createFileRoute('/_authed/perfil')({
-  component: ProfileSummary,
+  component: ProfilePage,
 })

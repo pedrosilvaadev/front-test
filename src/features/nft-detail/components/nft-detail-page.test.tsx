@@ -80,15 +80,16 @@ describe('NFT detail page', { timeout: APP_TEST_TIMEOUT }, () => {
     expect(screen.getAllByTestId('nft-price')[0]?.parentElement).toHaveTextContent('2.29 ETH')
   })
 
-  it('keeps Favoritar unavailable without side effects', async () => {
+  it('Favoritar (P3-02) is a toggle that sends guests to login and back', async () => {
     const { router } = await readyDetail()
     const before = router.state.location.href
-    for (const button of screen.getAllByRole('button', { name: /^Favoritar/ })) {
-      expect(button).toHaveAttribute('aria-disabled', 'true')
-      expect(button).toHaveAccessibleName(/\(em breve\)/)
-      fireEvent.click(button)
-    }
-    expect(router.state.location.href).toBe(before)
+    const buttons = screen.getAllByRole('button', { name: /^Favoritar/ })
+    for (const button of buttons) expect(button).toHaveAttribute('aria-pressed', 'false')
+    const first = buttons[0]
+    if (!first) throw new Error('missing Favoritar')
+    fireEvent.click(first)
+    await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
+    expect(router.state.location.search).toEqual({ redirect: before })
   })
 
   it('adds the selection to the cart (cart icon) and updates the header badge (P4-01)', async () => {

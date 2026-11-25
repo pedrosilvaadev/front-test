@@ -13,7 +13,7 @@
 | P2-03 | R02,R10,R07 | frontend (+qa loop 1) | PASS (--full) | PASS (after 1 fix loop) | see git log | DONE |
 | P2-04 | R02,R03,R10 | frontend | PASS (--full, M1) | PASS | see git log | DONE — M1 closed |
 | P3-01 | R06,R07,R08 | frontend | PASS (--full pre-loop; targeted e2e + quick gate post-loop) | PASS (after 1 fix loop) | see git log | DONE |
-| P3-02 | R06,R07 | frontend | — | — | — | TODO (favorites, profile/avatar/password, wallets; closes M2) |
+| P3-02 | R06,R07 | frontend | PASS (quick gate + account/auth/detail e2e) | deferred (ADR-009 final review) | see git log | DONE — M2 functional (--full at final review) |
 | P4-01 | R04,R07,R08 | frontend | PASS (quick gate + cart/detail/auth/shell e2e) | deferred (ADR-009 final review) | see git log | DONE |
 | P4-02 | R05,R04,R07,R08 | frontend | PASS (quick gate + checkout/cart/auth e2e) | deferred (ADR-009 final review) | see git log | DONE (merged with P4-03) |
 | P4-03 | R05 | — | — | — | — | MERGED into P4-02 (M3 functional; --full at final review) |

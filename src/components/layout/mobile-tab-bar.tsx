@@ -2,8 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Heart, House, ScanLine, User } from 'lucide-react'
 import { CartNavLink } from '@/features/cart/components/cart-chrome'
 import { cn } from '@/lib/utils'
-import { PlannedRouteLink } from './planned-route-link'
-import { PLANNED_ROUTES, UNAVAILABLE_SUFFIX } from './planned-routes'
+import { UNAVAILABLE_SUFFIX } from './planned-routes'
 
 const itemClass =
   'relative flex size-11 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:text-brand'
@@ -31,9 +30,10 @@ export function MobileTabBar() {
           </Link>
         </li>
         <li>
-          <PlannedRouteLink to={PLANNED_ROUTES.favorites} aria-label="Favoritos" className={itemClass}>
+          {/* P3-02: private route; guests go to login and come back. */}
+          <Link to="/favoritos" aria-label="Favoritos" className={itemClass}>
             <Heart className="size-6 fill-current" aria-hidden="true" />
-          </PlannedRouteLink>
+          </Link>
         </li>
         <li className="relative -top-7">
           {/* Center action from the frame; its destination is not specified, so it is unavailable. */}

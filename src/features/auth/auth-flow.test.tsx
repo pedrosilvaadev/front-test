@@ -60,8 +60,8 @@ describe('auth flow (app integration)', { timeout: APP_TEST_TIMEOUT }, () => {
 
     const profile = await screen.findByTestId('profile-summary', undefined, READY)
     expect(router.state.location.pathname).toBe('/perfil')
-    expect(within(profile).getByTestId('profile-email')).toHaveTextContent(DEMO_CREDENTIALS.collector.email)
-    expect(within(profile).getByTestId('profile-username')).toHaveTextContent('kurio.collector')
+    await waitFor(() => expect(within(profile).getByLabelText(/^E-mail/)).toHaveValue(DEMO_CREDENTIALS.collector.email), READY)
+    expect(within(profile).getByLabelText(/^Nome de usuário/)).toHaveValue('kurio.collector')
     expect(window.localStorage.getItem(SESSION_STORAGE_KEY)).not.toContain(DEMO_CREDENTIALS.collector.password)
   })
 
@@ -127,7 +127,7 @@ describe('auth flow (app integration)', { timeout: APP_TEST_TIMEOUT }, () => {
 
     const profile = await screen.findByTestId('profile-summary', undefined, READY)
     expect(router.state.location.pathname).toBe('/perfil')
-    expect(within(profile).getByTestId('profile-display-name')).toHaveTextContent('nova.conta')
+    await waitFor(() => expect(within(profile).getByLabelText(/^Nome de exibição/)).toHaveValue('nova.conta'), READY)
   })
 
   it('signed-in visitors skip /login; ?redirect=//evil.com is ignored', async () => {

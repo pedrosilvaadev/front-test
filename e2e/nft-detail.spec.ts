@@ -167,7 +167,7 @@ test.describe('nft detail: purchase controls', () => {
     await expect(bar).toBeInViewport()
     await page.getByTestId('nft-detail-tabs').scrollIntoViewIfNeeded()
     await expect(bar).toBeInViewport()
-    await expect(page.getByRole('button', { name: /Favoritar/ })).toHaveAttribute('aria-disabled', 'true')
+    await expect(page.getByTestId('nft-favorite-mobile')).toHaveAttribute('aria-pressed', 'false')
     await expect(page.getByRole('button', { name: 'Ampliar imagem' })).toBeHidden()
 
     await page.evaluate(() => window.scrollTo(0, 0))
