@@ -1,134 +1,132 @@
 # Kurio — NFT Marketplace (Jungle Gaming frontend challenge)
 
-Marketplace de NFTs em React e TypeScript, com uma API REST simulada (MSW) e eventos em tempo real (Socket.IO).
+An NFT marketplace in React and TypeScript, with a simulated REST API (MSW) and realtime events (Socket.IO).
 
-**Demo pública:** https://front-test-gray.vercel.app · **Repositório:** https://github.com/pedrosilvaadev/front-test
+**Live demo:** https://front-test-gray.vercel.app · **Repository:** https://github.com/pedrosilvaadev/front-test
 
-Toda a "API" roda no navegador. Não há backend, mas o frontend conversa com ela exatamente como conversaria com um servidor real:
+The whole "API" runs in the browser. There is no backend, but the frontend talks to it exactly as it would talk to a real server:
 
-- **REST:** Axios → HTTP → service worker do MSW.
-- **Tempo real:** `socket.io-client` → WebSocket interceptado pelo MSW.
+- **REST:** Axios → HTTP → MSW service worker.
+- **Realtime:** `socket.io-client` → WebSocket intercepted by MSW.
 
-Documentação:
+The UI is in Portuguese (pt-BR), as in the Figma design.
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md): arquitetura, sessão, carrinho, cache, reconciliação REST ↔ Socket.IO, limitações, decisões de UX e desvios do Figma.
-- [`docs/API_CONTRACTS.md`](docs/API_CONTRACTS.md): contratos REST e eventos.
+Documentation:
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): architecture, session, cart, cache, REST ↔ Socket.IO reconciliation, limitations, UX decisions and Figma deviations.
+- [`docs/API_CONTRACTS.md`](docs/API_CONTRACTS.md): REST and event contracts.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): ADRs.
-- [`docs/lighthouse/`](docs/lighthouse/README.md): auditoria Lighthouse.
-- [`docs/PROGRESS.md`](docs/PROGRESS.md) e `docs/tasks/`: evidências por entrega.
+- [`docs/lighthouse/`](docs/lighthouse/README.md): Lighthouse audit.
+- [`docs/PROGRESS.md`](docs/PROGRESS.md) and `docs/tasks/`: per-slice evidence.
 
 ## Stack
-- React 19, TypeScript, Vite, Tailwind CSS v4 e shadcn/ui (Radix).
-- TanStack Router (estado do catálogo na URL) e TanStack Query (cache, cancelamento, retry).
-- Axios, com uma instância única e respostas validadas com zod (`src/contracts`).
-- MSW: handlers REST com estado persistente e simulação do protocolo Socket.IO.
+- React 19, TypeScript, Vite, Tailwind CSS v4 and shadcn/ui (Radix).
+- TanStack Router (catalog state in the URL) and TanStack Query (cache, cancellation, retry).
+- Axios, with a single instance and responses validated with zod (`src/contracts`).
+- MSW: stateful REST handlers and a Socket.IO protocol simulation.
 - `socket.io-client`.
-- big.js para valores em ETH, que são strings decimais e nunca `number`.
-- Vitest e Testing Library; Playwright (Chromium desktop e mobile, axe-core, regressão visual); Lighthouse.
+- big.js for ETH values, which are decimal strings and never `number`.
+- Vitest and Testing Library; Playwright (Chromium desktop and mobile, axe-core, visual regression); Lighthouse.
 
 ## Setup
-Requer Node 22 e npm.
+Requires Node 22 and npm.
 
 ```bash
 npm ci
-npx playwright install chromium   # apenas para os testes e2e
-npm run dev                       # http://localhost:5173 (com mocks)
+npx playwright install chromium   # only for the e2e tests
+npm run dev                       # http://localhost:5173 (with mocks)
 ```
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `npm run dev` | Desenvolvimento com mocks (MSW e Socket.IO simulado) |
-| `npm run build` / `npm run preview` | Build otimizado (com mocks: é o build de demonstração) e servidor local |
-| `npm run typecheck` / `npm run lint` | Verificação de tipos / ESLint |
-| `npm run test -- --run` | Testes unitários e de integração (Vitest) |
-| `npm run e2e` | Playwright em Chromium desktop e mobile, com relatório HTML em `playwright-report/` e traces das falhas em `test-results/` |
-| `npm run e2e:update-snapshots` | Regenera os baselines visuais (`e2e/__screenshots__/`) |
-| `npm run lighthouse` | Lighthouse: 3 execuções × 2 páginas × 2 perfis, com medianas em `docs/lighthouse/` (rodar depois de `npm run build`) |
-| `bash scripts/quality-gate.sh [--full]` | typecheck + lint + testes + build (`--full` inclui o e2e) |
+| `npm run dev` | Development with mocks (MSW and simulated Socket.IO) |
+| `npm run build` / `npm run preview` | Optimized build (with mocks: this is the demo build) and local server |
+| `npm run typecheck` / `npm run lint` | Type checking / ESLint |
+| `npm run test -- --run` | Unit and integration tests (Vitest) |
+| `npm run e2e` | Playwright on Chromium desktop and mobile; HTML report in `playwright-report/`, failure traces in `test-results/` |
+| `npm run e2e:update-snapshots` | Regenerates the visual baselines (`e2e/__screenshots__/`) |
+| `npm run lighthouse` | Lighthouse: 3 runs × 2 pages × 2 profiles, medians in `docs/lighthouse/` (run after `npm run build`) |
+| `bash scripts/quality-gate.sh [--full]` | typecheck + lint + tests + build (`--full` adds the e2e suite) |
 
-### Variáveis de ambiente
-Todas são opcionais e não secretas (detalhes em `docs/ENVIRONMENT.md`). Para sobrescrever, use `.env.local`.
+### Environment variables
+All optional and non-secret (details in `docs/ENVIRONMENT.md`). Override them in `.env.local`.
 
-| Variável | Padrão | Uso |
+| Variable | Default | Purpose |
 |---|---|---|
-| `VITE_ENABLE_MOCKS` | ligado | `false` desliga o MSW (não há backend real) |
-| `VITE_API_BASE_URL` | `/api` | Base do Axios |
-| `VITE_API_TIMEOUT_MS` | `10000` | Timeout das requisições |
+| `VITE_ENABLE_MOCKS` | on | `false` turns MSW off (there is no real backend) |
+| `VITE_API_BASE_URL` | `/api` | Axios base URL |
+| `VITE_API_TIMEOUT_MS` | `10000` | Request timeout |
 
-### Credenciais de demonstração (fictícias)
-| Usuário | E-mail | Senha |
+### Demo credentials (fictitious)
+| User | E-mail | Password |
 |---|---|---|
-| Colecionador (tem carteira MetaMask principal) | `colecionador@kurio.test` | `Colecionador2026` |
-| Criadora | `nova@kurio.test` | `NovaSato2026` |
+| Collector (has a primary MetaMask wallet) | `colecionador@kurio.test` | `Colecionador2026` |
+| Creator | `nova@kurio.test` | `NovaSato2026` |
 
-Também é possível criar uma conta em `/cadastro`.
+You can also create an account at `/cadastro` (sign up).
 
-Cupons:
-- `KURIO10`: 10% de desconto;
-- `LANCAMENTO`: 0.5 ETH de desconto;
-- `EXPIRADO`: rejeitado como expirado.
+Coupons:
+- `KURIO10`: 10% off;
+- `LANCAMENTO`: 0.5 ETH off;
+- `EXPIRADO`: rejected as expired.
 
-Qualquer outro código é rejeitado como inválido.
+Any other code is rejected as invalid.
 
-## Cenários e reset da API simulada
-- **Rede:** adicione `?scenario=<nome>` a qualquer URL. A escolha fica persistida no navegador; `?scenario=default` restaura.
+## Mock API scenarios and reset
+- **Network:** add `?scenario=<name>` to any URL. The choice is persisted in the browser; `?scenario=default` restores it.
   - `default`
-  - `slow` (1,5 s)
-  - `variable-latency` (respostas fora de ordem)
+  - `slow` (1.5 s)
+  - `variable-latency` (out-of-order responses)
   - `server-error`
   - `offline`
   - `timeout`
-- **Reset:** `POST /api/__dev/reset` restaura o seed (banco, cenário e tempo real). Também dá para limpar o `localStorage` do site.
+- **Reset:** `POST /api/__dev/reset` restores the seed (database, scenario and realtime). Clearing the site's `localStorage` also works.
 
-### Como reproduzir os fluxos de falha
-Os controles abaixo são chamados com `fetch` do próprio navegador, por exemplo no console do DevTools, na aba da aplicação.
+### How to reproduce the failure flows
+The controls below are called with `fetch` from the app's own tab, for example in the DevTools console.
 
-| Fluxo | Como reproduzir |
+| Flow | How to reproduce |
 |---|---|
-| Lentidão, skeletons, respostas fora de ordem | `?scenario=slow` ou `?scenario=variable-latency` e filtrar o catálogo rapidamente |
-| Erro 5xx, offline e timeout com "Tentar novamente" | `?scenario=server-error`, `offline` ou `timeout`; depois `?scenario=default` e clicar em tentar novamente |
-| Sessão expirada | Logado: `fetch('/api/__dev/sessions/expire',{method:'POST'})` e navegar para `/perfil` → login com aviso → volta |
-| Preço alterado ou edição esgotada durante a compra (Socket.IO) | Com o NFT no carrinho ou no checkout: `fetch('/api/__dev/nfts/nft_001',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({price:'1.5'})})`; para esgotar, use `editions:[{id:'nft_001-1of50',available:0}]` |
-| Pagamento recusado ou pendente | `fetch('/api/__dev/checkout',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderOutcome:'decline'})})`; `'pending'` deixa o pedido pendente e `resolveDelayMs` define o atraso |
-| Timeout depois da criação do pedido (recuperação por idempotência) | `PUT /api/__dev/checkout` com `{dropNextOrderResponses:1}` e confirmar duas vezes: o resultado é um único pedido |
-| Queda do tempo real e reconexão | `fetch('/api/__dev/realtime',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({online:false})})` → banner "Reconectando…"; altere algo e depois `{online:true}`: o REST é reconciliado |
-| Resolver um pedido pendente | `POST /api/__dev/orders/<id>/resolve` com `{status:'confirmed'\|'declined'}` |
-| Evento duplicado ou antigo | `POST /api/__dev/realtime/emit` com um envelope `nft.updated` (ver `docs/API_CONTRACTS.md`) |
+| Slowness, skeletons, out-of-order responses | `?scenario=slow` or `?scenario=variable-latency`, then filter the catalog quickly |
+| 5xx error, offline and timeout with retry | `?scenario=server-error`, `offline` or `timeout`; then `?scenario=default` and click "Tentar novamente" (Try again) |
+| Expired session | While signed in: `fetch('/api/__dev/sessions/expire',{method:'POST'})`, then go to `/perfil` → login with a notice → back to the page |
+| Price change or sold-out edition during checkout (Socket.IO) | With the NFT in the cart or at checkout: `fetch('/api/__dev/nfts/nft_001',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({price:'1.5'})})`; to sell out, use `editions:[{id:'nft_001-1of50',available:0}]` |
+| Declined or pending payment | `fetch('/api/__dev/checkout',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderOutcome:'decline'})})`; `'pending'` keeps the order pending and `resolveDelayMs` sets the delay |
+| Timeout after the order was created (idempotent recovery) | `PUT /api/__dev/checkout` with `{dropNextOrderResponses:1}` and confirm: you end up with a single order and its receipt |
+| Realtime outage and reconnection | `fetch('/api/__dev/realtime',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({online:false})})` → "Reconectando…" (Reconnecting) banner; change something, then `{online:true}`: state is reconciled over REST |
+| Resolve a pending order | `POST /api/__dev/orders/<id>/resolve` with `{status:'confirmed'\|'declined'}` |
+| Duplicate or stale event | `POST /api/__dev/realtime/emit` with an `nft.updated` envelope (see `docs/API_CONTRACTS.md`) |
 
-## Testes
-- **Unitários e de integração:** 411 testes (Vitest).
+## Tests
+- **Unit and integration:** 416 tests (Vitest).
 - **E2E (Playwright):**
-  - cobre os 12 grupos do README do desafio em Chromium desktop (1440×900) e mobile (Pixel 7);
-  - o mapa grupo → spec está em [`docs/tasks/P6-01.md`](docs/tasks/P6-01.md);
-  - cada teste parte de um estado isolado (reset do mock);
-  - os de REST passam pelos handlers do MSW e os de tempo real pelo `socket.io-client`;
-  - a varredura axe (WCAG 2.1 AA) cobre 9 telas;
-  - há regressão visual de início, detalhe, carrinho e pagamento.
+  - covers the 12 groups of the challenge README on Chromium desktop (1440×900) and mobile (Pixel 7);
+  - the group → spec map is in [`docs/tasks/P6-01.md`](docs/tasks/P6-01.md);
+  - every test starts from an isolated state (mock reset);
+  - REST tests go through the MSW handlers and realtime tests through `socket.io-client`;
+  - an axe scan (WCAG 2.1 AA) covers 9 screens;
+  - visual regression covers home, NFT detail, cart and checkout.
 
-## Lighthouse (medianas de 3 execuções)
-| Página | Perfil | Perf. | A11y | Best Pr. | SEO |
+## Lighthouse (medians of 3 runs)
+| Page | Profile | Perf. | A11y | Best Pr. | SEO |
 |---|---|---:|---:|---:|---:|
-| Início | mobile | 75 | 100 | 100 | 100 |
-| Início | desktop | 98 | 100 | 100 | 100 |
-| Detalhe | mobile | 80 | 100 | 100 | 100 |
-| Detalhe | desktop | 99 | 100 | 100 | 100 |
+| Home | mobile | 75 | 100 | 100 | 100 |
+| Home | desktop | 98 | 100 | 100 | 100 |
+| NFT detail | mobile | 80 | 100 | 100 | 100 |
+| NFT detail | desktop | 99 | 100 | 100 | 100 |
 
-O desempenho no mobile fica abaixo da meta de 90. As causas (SPA sem SSR, chunk de entrada de 510 kB e MSW no caminho crítico), as medidas tomadas, LCP/CLS/TBT e os próximos passos estão em [`docs/lighthouse/README.md`](docs/lighthouse/README.md).
+Mobile performance is below the 90 target. The causes (a client-rendered SPA without SSR, a 510 kB entry chunk and MSW on the critical path), what was done about it, LCP/CLS/TBT and next steps are in [`docs/lighthouse/README.md`](docs/lighthouse/README.md).
 
 ## Deploy (Vercel)
-- **Produção:** https://front-test-gray.vercel.app, publicado com `vercel deploy --prod` (Vercel CLI 66.6.0) a partir de `main`.
-- **Verificado após o deploy:**
-  - acesso direto e refresh em `/`, `/nft/emerald-ape-042`, `/perfil`, `/checkout` e `/pedidos/:id`;
-  - MSW ativo;
-  - Socket.IO conectado, com `nft.updated` aplicado;
+- **Production:** https://front-test-gray.vercel.app. The Vercel project is connected to this GitHub repository: every push to `main` deploys to production, and other branches get preview URLs.
+- **Verified after deploying:**
+  - direct access and refresh on `/`, `/nft/emerald-ape-042`, `/perfil`, `/checkout` and `/pedidos/:id`;
+  - MSW active;
+  - Socket.IO connected, with `nft.updated` applied;
   - login;
-  - catálogo com filtros na URL;
+  - catalog with URL filters;
   - `robots.txt`;
-  - `mockServiceWorker.js` sem cache.
-- **Configuração:** framework "Vite", build `npm run build`, output `dist`.
-- **Rotas:** o `vercel.json` reescreve as rotas da SPA para `index.html`, então acesso direto e refresh funcionam em `/nft/...`, `/perfil` etc.
-- **Service worker:** `mockServiceWorker.js` é servido sem cache.
-- **Mocks e tempo real:** ficam ativos no build publicado.
-
-## Uso de IA
-Desenvolvido com auxílio do Claude Code: implementação por fatias, com gates (tipos, lint, testes, build e e2e) e evidências registradas em `docs/tasks/`. Há uma revisão independente ao final (ADR-009).
+  - `mockServiceWorker.js` served without caching.
+- **Configuration:** "Vite" framework preset, build `npm run build`, output `dist`.
+- **Routes:** `vercel.json` rewrites the SPA routes to `index.html`, so direct access and refresh work on `/nft/...`, `/perfil` and so on.
+- **Mocks and realtime:** both stay enabled in the published build.
