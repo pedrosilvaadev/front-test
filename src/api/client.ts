@@ -2,6 +2,7 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axio
 import { readApiConfig, type ApiConfig } from './config'
 import { getAuthBridge } from '@/features/auth/session-bridge'
 import { ApiError, toApiError } from './errors'
+import { whenNetworkReady } from './network-ready'
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -98,7 +99,11 @@ export function createApiClient(config: Partial<ApiConfig> = {}): AxiosInstance 
     transitional: { clarifyTimeoutError: true },
   })
 
-  instance.interceptors.request.use((request) => applyTimeoutSignal(attachBearer(request)))
+  // Waits for the mock worker (demo build) before the timeout starts counting.
+  instance.interceptors.request.use(async (request) => {
+    await whenNetworkReady()
+    return applyTimeoutSignal(attachBearer(request))
+  })
   instance.interceptors.response.use(undefined, (error: unknown) => {
     const apiError = isClientTimeout(error) ? new ApiError({ kind: 'timeout', cause: error }) : toApiError(error)
     notifySessionRejection(apiError)

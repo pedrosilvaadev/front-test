@@ -15,7 +15,8 @@ export interface FetchResult {
  * before this point would bypass the mocks.
  */
 export async function waitForMockWorker(page: Page): Promise<void> {
-  await page.waitForFunction(() => navigator.serviceWorker?.controller != null, undefined, {
+  // The app renders before MSW finishes starting (P6-02); `data-mocks="ready"` is set once it handles requests.
+  await page.waitForFunction(() => navigator.serviceWorker?.controller != null && document.documentElement.dataset.mocks === 'ready', undefined, {
     timeout: 15_000,
   })
 }

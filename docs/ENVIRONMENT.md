@@ -4,7 +4,7 @@ All values are non-secret `VITE_*` flags exposed to the browser bundle. Defaults
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `VITE_ENABLE_MOCKS` | on (unless `false`) | Start the MSW worker before render; required for the demo build (no real backend). |
+| `VITE_ENABLE_MOCKS` | on (unless `false`) | Start the MSW worker at boot (the app renders immediately; API requests and the socket wait for it via `whenNetworkReady`). Required for the demo build (no real backend). |
 | `VITE_API_BASE_URL` | `/api` | Base URL of the single Axios instance. Mocks only intercept same-origin `/api`. |
 | `VITE_API_TIMEOUT_MS` | `10000` | Axios request timeout (ms). |
 

@@ -1,15 +1,16 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { setNetworkReady } from './api/network-ready'
 import { App } from './app'
 import { createAppRouter, createQueryClient } from './router'
 import './index.css'
 
-/** Starts MSW before the first request. Dynamic import keeps it in its own chunk. */
-async function enableMocking(): Promise<void> {
+/** Starts MSW (own chunk via dynamic import). Requests wait for it through `setNetworkReady`. */
+async function enableMocking(initialSearch: string): Promise<void> {
   // Mocks are on by default (demo build has no backend); set VITE_ENABLE_MOCKS=false to disable.
   if (import.meta.env.VITE_ENABLE_MOCKS === 'false') return
   const { startMockWorker } = await import('./mocks/browser')
-  await startMockWorker()
+  await startMockWorker(initialSearch)
 }
 
 function renderApp(): void {
@@ -28,9 +29,13 @@ function renderApp(): void {
   )
 }
 
-enableMocking()
-  .catch((error: unknown) => {
+// Render right away (shell + skeletons paint while MSW boots); API requests and
+// the realtime socket wait for the worker through `whenNetworkReady()` (P6-02).
+setNetworkReady(
+  // Captured before the first render: the router may rewrite `?scenario=` away.
+  enableMocking(window.location.search).catch((error: unknown) => {
     // Without the worker, API calls surface real network errors in the UI.
     console.error('[mocks] Failed to start the mock service worker.', error)
-  })
-  .finally(renderApp)
+  }),
+)
+renderApp()

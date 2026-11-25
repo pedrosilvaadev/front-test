@@ -15,11 +15,12 @@ function getStorage(): Storage | undefined {
   }
 }
 
-export async function startMockWorker(): Promise<void> {
+/** `initialSearch`: the query string at boot (the router may canonicalize the URL before this runs). */
+export async function startMockWorker(initialSearch = window.location.search): Promise<void> {
   const storage = getStorage()
   // Restore the persisted simulated server state (falls back to the seed).
   initDb(storage)
-  const initial = resolveInitialScenario(window.location.search, storage)
+  const initial = resolveInitialScenario(initialSearch, storage)
   setScenario(initial.name, initial.seed)
   enableOrderAutoSettle()
 
@@ -28,4 +29,6 @@ export async function startMockWorker(): Promise<void> {
     onUnhandledRequest: 'bypass',
     quiet: import.meta.env.PROD,
   })
+  // Observable readiness (E2E fixtures wait for it before calling dev endpoints directly).
+  document.documentElement.dataset.mocks = 'ready'
 }

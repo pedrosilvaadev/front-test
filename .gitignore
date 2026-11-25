@@ -5,6 +5,7 @@ playwright-report/
 test-results/
 blob-report/
 .lighthouseci/
+lighthouse-results/
 .env
 .env.*
 !.env.example

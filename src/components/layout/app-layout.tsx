@@ -1,15 +1,33 @@
 import type * as React from 'react'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { MobileTabBar } from './mobile-tab-bar'
 import { SiteFooter } from './site-footer'
 import { SiteHeader } from './site-header'
 
 const MAIN_CONTENT_ID = 'main-content'
 
-/** Realtime connection (P5-01) in its own chunk, with `socket.io-client` loaded on demand. */
+/**
+ * Realtime connection (P5-01) in its own chunk, with `socket.io-client` loaded
+ * on demand. Mounted once the browser is idle after the first render, so the
+ * socket chunk and handshake never compete with the first paint/LCP (P6-02);
+ * missed updates in that window are covered by the REST data just loaded.
+ */
 const RealtimeBridge = lazy(() =>
   import('@/features/realtime/realtime-bridge').then((module) => ({ default: module.RealtimeBridge })),
 )
+
+function useIdle(): boolean {
+  const [idle, setIdle] = useState(false)
+  useEffect(() => {
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(() => setIdle(true), { timeout: 2000 })
+      return () => window.cancelIdleCallback(handle)
+    }
+    const handle = window.setTimeout(() => setIdle(true), 200)
+    return () => window.clearTimeout(handle)
+  }, [])
+  return idle
+}
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -21,6 +39,7 @@ interface AppLayoutProps {
  * Breakpoint switch at `md` (768px).
  */
 export function AppLayout({ children }: AppLayoutProps) {
+  const idle = useIdle()
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground max-md:pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+1rem)]">
       <a
@@ -39,9 +58,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
       <SiteFooter />
       <MobileTabBar />
-      <Suspense fallback={null}>
-        <RealtimeBridge />
-      </Suspense>
+      {idle ? (
+        <Suspense fallback={null}>
+          <RealtimeBridge />
+        </Suspense>
+      ) : null}
     </div>
   )
 }

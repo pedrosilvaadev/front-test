@@ -1,4 +1,5 @@
 import type { Socket } from 'socket.io-client'
+import { whenNetworkReady } from '@/api/network-ready'
 import {
   NFT_UPDATED,
   nftUpdatedEventSchema,
@@ -59,7 +60,7 @@ export function connectRealtime(options: RealtimeConnectionOptions): () => void 
   let disposed = false
   let hasConnected = false
 
-  void import('socket.io-client').then(({ io }) => {
+  void Promise.all([import('socket.io-client'), whenNetworkReady()]).then(([{ io }]) => {
     if (disposed) return
     const auth: SocketAuth = options.token ? { token: options.token } : {}
     const client: AppSocket = io(options.url ?? '', {

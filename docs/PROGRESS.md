@@ -19,7 +19,7 @@
 | P4-03 | R05 | — | — | — | — | MERGED into P4-02 (M3 functional; --full at final review) |
 | P5-01 | R09 | orchestrator (integration) | PASS (quick gate + full e2e) | deferred (ADR-009 final review) | see git log | DONE — M4 functional (--full at final review) |
 | P6-01 | R11,R10 | orchestrator (qa) | PASS (quick gate + full e2e 202 passed) | deferred (ADR-009 final review) | see git log | DONE |
-| P6-02 | R12,R13 | qa | — | — | — | TODO (Lighthouse 3x medians, docs, deploy verification — deploy needs separate approval; closes M5) |
+| P6-02 | R12,R13 | orchestrator (qa) | PASS (quick gate + full e2e 202 passed; Lighthouse 3x medians) | deferred (ADR-009 final review) | see git log | DONE — deploy pending owner approval |
 
 ## Blockers
 - Figma: resolved partially — owner exported 15 PNG frames to `docs/design/` (Desktop 1440w: 9 screens; Mobile 414w: 6 screens). No Dev Mode, so exact tokens (colors, fonts, spacing) are sampled from pixels; parity is visual, not token-exact. Brand in design: "Kurio", dark brown theme, orange accent, monospace type.
