@@ -28,3 +28,8 @@
 | `bash scripts/quality-gate.sh --full` (at 3bd5c9c, before fixes) | 0 | 411 unit; 202 e2e passed, 12 skipped |
 | vitest orders + checkout | 0 | 21 passed |
 | playwright checkout + purchase + realtime | 0 | 38 passed (includes the new M1 test) |
+
+## Re-review of dfa5729 (same independent reviewer)
+- **Decision: PASS.** M1, M2 and m1 are resolved with no regression. The reviewer ran `git show` and vitest for checkout + orders (21 passed).
+- **New MINOR finding:** when the cart changes in another tab, the `QUOTE_CHANGED` details can carry `changes: []`. The client schema requires at least one change, so clicking "Confirmar compra" showed nothing.
+  - **Fix:** a generic review message ("Seu carrinho mudou. Revise os valores e confirme novamente.") plus a quote refetch (checkout-form.tsx).

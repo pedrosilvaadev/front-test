@@ -168,6 +168,10 @@ export function CheckoutForm({ user, cart, owner, wallets }: CheckoutFormProps) 
                 : 'Os valores do seu pedido mudaram. Revise e confirme novamente.',
             changes: details.data.changes,
           })
+        } else {
+          // Cart changed elsewhere (another tab) without price/stock differences: still ask to review.
+          void queryClient.invalidateQueries({ queryKey: queryKeys.cart.quotes(owner.key) })
+          setReview({ message: 'Seu carrinho mudou. Revise os valores e confirme novamente.', changes: [] })
         }
         void queryClient.invalidateQueries({ queryKey: queryKeys.cart.owner(owner.key) })
         return
