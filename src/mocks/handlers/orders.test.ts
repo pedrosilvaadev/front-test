@@ -141,6 +141,26 @@ describe('POST /api/orders revalidation', () => {
   })
 })
 
+describe('POST /api/orders: one order per quote and per cart version', () => {
+  it('another key with an already used quote → 409 QUOTE_EXPIRED (no second order)', async () => {
+    const { post } = await setup()
+    expect((await post(KEY_A)).status).toBe(201)
+    const error = await capture(post(KEY_B))
+    expect(error).toMatchObject({ status: 409, code: 'QUOTE_EXPIRED' })
+    expect(getDb().orders).toHaveLength(1)
+  })
+
+  it('a quote for an older cart version → 409 QUOTE_CHANGED with a fresh quote of the current cart', async () => {
+    const { post, auth } = await setup()
+    await client.post('/cart/items', { nftId: 'nft_001', editionId: 'nft_001-1of50', quantity: 1 }, auth)
+    const error = await capture(post(KEY_A))
+    expect(error).toMatchObject({ status: 409, code: 'QUOTE_CHANGED' })
+    const fresh = quoteSchema.parse((error.details as { quote: unknown }).quote)
+    expect(fresh.lines[0]?.quantity).toBe(3)
+    expect(getDb().orders).toHaveLength(0)
+  })
+})
+
 describe('order lifecycle', () => {
   it('confirms deterministically: transaction, cart lines removed, stock committed, immutable receipt', async () => {
     const { post, get, auth } = await setup(2)

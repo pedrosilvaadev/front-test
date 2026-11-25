@@ -1,12 +1,16 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
 import { ChevronLeft, ShoppingCart } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/contracts'
-import { useDocumentTitle, useSession } from '@/features/auth/use-session'
+import { useDocumentTitle, useSession, useSessionManager } from '@/features/auth/use-session'
 import { useCart } from '@/features/cart/cart-queries'
-import { walletsQueryOptions } from '../checkout-queries'
+import { queryKeys } from '@/lib/query-keys'
+import { loadOrdersApi, walletsQueryOptions } from '../checkout-queries'
+import { readAttempt } from '../checkout-storage'
+import { recoverAttempt } from '../place-order'
 import { CheckoutForm } from './checkout-form'
 
 /**
@@ -24,10 +28,47 @@ export function CheckoutPage() {
   )
 }
 
+/**
+ * An emptied cart with a stored attempt that never got its order (lost
+ * response, reload) means the purchase went through and was confirmed in the
+ * background: replay the attempt with the same key and open its order
+ * (README §3/§7 recovery, no second purchase). `true` while recovering.
+ */
+function useRecoverAttempt(userId: string, cartEmpty: boolean): boolean {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  // Key of the attempt whose recovery finished (success or nothing to recover).
+  const [settledKey, setSettledKey] = useState<string | null>(null)
+  const attempt = cartEmpty ? readAttempt(userId) : null
+  const pendingKey = attempt && !attempt.orderId ? attempt.idempotencyKey : null
+  useEffect(() => {
+    if (!pendingKey) return
+    let active = true
+    void loadOrdersApi()
+      .then((api) => recoverAttempt(userId, api))
+      .then((order) => {
+        if (!active || !order) return
+        queryClient.setQueryData(queryKeys.user.order(userId, order.id), order)
+        void navigate({ to: '/pedidos/$orderId', params: { orderId: order.id }, replace: true })
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setSettledKey(pendingKey)
+      })
+    return () => {
+      active = false
+    }
+  }, [userId, pendingKey, navigate, queryClient])
+  return pendingKey !== null && settledKey !== pendingKey
+}
+
 function CheckoutContent({ user }: { user: User }) {
   const cart = useCart()
-  const wallets = useQuery(walletsQueryOptions(user.id))
+  const manager = useSessionManager()
+  const wallets = useQuery(walletsQueryOptions(user.id, manager))
+  const recovering = useRecoverAttempt(user.id, cart.cart?.items.length === 0)
 
+  if (recovering) return <CheckoutSkeleton label="Recuperando sua compra…" />
   if (cart.cart && cart.cart.items.length === 0) return <CheckoutEmpty />
   if (cart.cart && cart.owner.status === 'ready' && wallets.data) {
     return <CheckoutForm key={user.id} user={user} cart={cart.cart} owner={cart.owner.owner} wallets={wallets.data} />
@@ -109,10 +150,10 @@ function CheckoutEmpty() {
   )
 }
 
-function CheckoutSkeleton() {
+function CheckoutSkeleton({ label = 'Carregando pagamento…' }: { label?: string }) {
   return (
     <div aria-busy="true" aria-live="polite" data-testid="checkout-skeleton" className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_25.3rem]">
-      <span className="sr-only">Carregando pagamento…</span>
+      <span className="sr-only">{label}</span>
       <Skeleton aria-hidden="true" className="h-[28rem] w-full bg-card" />
       <Skeleton aria-hidden="true" className="h-[28rem] w-full bg-card" />
     </div>

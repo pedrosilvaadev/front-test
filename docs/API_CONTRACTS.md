@@ -135,7 +135,9 @@ PUT/DELETE are idempotent so an optimistic toggle can be retried safely; this is
 7. Attempts are deleted when the order is terminal, on **explicit logout**, or when a **different** user signs in. They are **kept** on `SESSION_EXPIRED` and on re-login as the same user (ADR-004/ADR-005).
 8. Submit buttons are disabled while in flight (double-click guard on top of idempotency).
 
-**Revalidation before confirming** (README §3, §7): on creation the server re-prices the cart and compares it to `quoteId`:
+**Revalidation before confirming** (README §3, §7): on creation (after the idempotency lookup) the server checks the quote and re-prices its lines against the catalog:
+- a quote already used by another pending/confirmed order of the user → 409 `QUOTE_EXPIRED` (one quote buys at most one order; a declined order releases it);
+- the cart changed since the quote (`quote.cartVersion` ≠ current cart version) → 409 `QUOTE_CHANGED` with a fresh quote of the current cart;
 - quote older than `expiresAt` → 409 `QUOTE_EXPIRED` (client requests a new quote and asks for confirmation);
 - any price/fee/coupon difference → 409 `QUOTE_CHANGED`, `details: QuoteChangedDetails { changes[], quote }` (fresh quote). The UI shows the changes and requires an explicit new confirmation, which submits the new `quoteId` with a new key;
 - a line no longer fulfillable → 409 `AVAILABILITY_CONFLICT` with the same `QuoteChangedDetails` shape (`availability_changed` / `item_unavailable`);

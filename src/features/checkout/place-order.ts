@@ -9,9 +9,9 @@ import { clearAttempt, readAttempt, writeAttempt, type CheckoutAttempt } from '.
  * 1. A persisted attempt with the same payload is a retry: it is replayed
  *    with the same `Idempotency-Key` (timeout, offline, reload, re-login).
  * 2. A persisted attempt with another payload is resolved first: its order is
- *    read (or the attempt replayed) and a still pending order is returned
- *    instead of creating a second one; a terminal order or an attempt rejected
- *    by revalidation is cleared.
+ *    read (or the attempt replayed) and a still pending order — or a confirmed
+ *    order of the same quote — is returned instead of creating a second one;
+ *    any other terminal order or an attempt rejected by revalidation is cleared.
  * 3. Only then a new key is generated and persisted BEFORE the request.
  * Network/timeout errors keep the attempt (the next submit replays it);
  * revalidation errors clear it (a re-confirmed quote is a new attempt).
@@ -70,7 +70,7 @@ async function send(attempt: CheckoutAttempt, api: OrdersApi): Promise<Order> {
  * when it is still pending (the caller shows it instead of paying again);
  * `null` when the attempt is finished or never produced an order.
  */
-async function resolvePrevious(attempt: CheckoutAttempt, api: OrdersApi): Promise<Order | null> {
+async function resolvePrevious(attempt: CheckoutAttempt, api: OrdersApi, quoteId: string): Promise<Order | null> {
   let order: Order | null = null
   if (attempt.orderId) {
     try {
@@ -87,6 +87,11 @@ async function resolvePrevious(attempt: CheckoutAttempt, api: OrdersApi): Promis
   }
   if (order?.status === 'pending') {
     writeAttempt({ ...attempt, orderId: order.id })
+    return order
+  }
+  // The same quote was already bought: show that order instead of paying again.
+  if (order?.status === 'confirmed' && order.quoteId === quoteId) {
+    clearAttempt(attempt.userId)
     return order
   }
   clearAttempt(attempt.userId)
@@ -107,10 +112,30 @@ export async function placeOrder(userId: string, payload: CreateOrderRequest, de
     return send(previous, api)
   }
   if (previous) {
-    const pending = await resolvePrevious(previous, api)
+    const pending = await resolvePrevious(previous, api, payload.quoteId)
     if (pending) return pending
   }
   const attempt: CheckoutAttempt = { userId, quoteId: payload.quoteId, idempotencyKey: newKey(), payload }
   writeAttempt(attempt)
   return send(attempt, api)
+}
+
+/**
+ * Recovers a stored attempt that never received its order (lost response,
+ * reload) once the cart was emptied — i.e. the order went through and was
+ * confirmed in the background. Replays it with the same key and payload:
+ * returns the order, or `null` when there is nothing to recover (the attempt
+ * is dropped when the server rejects it as never created).
+ */
+export async function recoverAttempt(userId: string, api: OrdersApi): Promise<Order | null> {
+  const attempt = readAttempt(userId)
+  if (!attempt || attempt.orderId) return null
+  try {
+    const { order } = await api.createOrder(attempt.payload, attempt.idempotencyKey)
+    writeAttempt({ ...attempt, orderId: order.id })
+    return order
+  } catch (error) {
+    if (isRejectedBeforeOrder(error)) clearAttempt(userId)
+    return null
+  }
 }

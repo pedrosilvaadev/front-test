@@ -153,6 +153,21 @@ test.describe('checkout', () => {
     expect((JSON.parse(orders.body) as { items: { idempotencyKey: string }[] }).items[0]?.idempotencyKey).toBe(key)
   })
 
+  test('a lost response confirmed in the background leads to the receipt without a second click', async ({ page }) => {
+    const token = await signInStored(page)
+    await addToUserCart(page, token)
+    await devCheckout(page, { dropNextOrderResponses: 1, resolveDelayMs: 1500 })
+    await openCheckout(page)
+    await confirmButton(page).click()
+    await expect(page.getByTestId('checkout-error-message')).toContainText('Sua tentativa foi guardada', READY)
+
+    // No retry click: the order confirms server side, the cart empties (order.updated) and the
+    // stored attempt is replayed with the same key → receipt, still exactly one order.
+    await expect(page).toHaveURL(/\/pedidos\/ord_[0-9a-f]+$/, READY)
+    await expectReceipt(page, '2.396 ETH')
+    expect(await listOrders(page, token)).toHaveLength(1)
+  })
+
   test('declined payment shows the reason and a new attempt succeeds with a new key', async ({ page }) => {
     const token = await signInStored(page)
     await addToUserCart(page, token)

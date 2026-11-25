@@ -1,5 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { isRetryableApiError } from '@/features/auth/session-bridge'
+import type { SessionManager } from '@/features/auth/session-manager'
+import { tokenFor } from '@/features/favorites/favorites-queries'
 import { queryKeys } from '@/lib/query-keys'
 
 const loadWalletsApi = () => import('@/api/wallets')
@@ -7,11 +9,15 @@ const loadOrdersApi = () => import('@/api/orders')
 
 const retryTransient = (failureCount: number, error: unknown) => isRetryableApiError(error) && failureCount < 2
 
-/** `['user', userId, 'wallets']` (private, ADR-004). */
-export function walletsQueryOptions(userId: string) {
+/**
+ * `['user', userId, 'wallets']` (private, ADR-004). The request carries that
+ * user's token (`tokenFor`), so a refetch racing a user switch can never write
+ * another user's wallets under this key (same rule as the wallets page).
+ */
+export function walletsQueryOptions(userId: string, manager: Pick<SessionManager, 'getToken' | 'getUserId'>) {
   return queryOptions({
     queryKey: queryKeys.user.wallets(userId),
-    queryFn: async ({ signal }) => (await loadWalletsApi()).getWallets({ signal }),
+    queryFn: async ({ signal }) => (await loadWalletsApi()).getWallets({ signal, token: tokenFor(manager, userId) }),
     staleTime: 15_000,
     retry: retryTransient,
   })

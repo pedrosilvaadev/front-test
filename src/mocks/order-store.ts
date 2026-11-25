@@ -8,7 +8,7 @@ import {
   type QuoteChange,
 } from '@/contracts'
 import { eqEth } from '@/lib/money'
-import { createQuote, NETWORK_FEES, ownerKey } from './cart-store'
+import { createQuote, findCart, NETWORK_FEES, ownerKey } from './cart-store'
 import { lookupCoupon } from './coupons'
 import { findNft, getDb, reloadDb, updateDb, type MockDb, type OrderRecord } from './db'
 import { randomHex } from './sessions'
@@ -20,6 +20,8 @@ import { findWalletById } from './wallet-store'
  * - Idempotency: `(userId, key) → { fingerprint, orderId }` checked before
  *   any revalidation; same fingerprint → the same order (replay), other
  *   fingerprint → `IDEMPOTENCY_CONFLICT`.
+ * - A quote buys at most one order, and it must price the current cart
+ *   version (otherwise `QUOTE_EXPIRED` / `QUOTE_CHANGED` with a fresh quote).
  * - Revalidation of the quote lines against the current catalog (price,
  *   availability, coupon, fee) → `QUOTE_EXPIRED` / `QUOTE_CHANGED` /
  *   `AVAILABILITY_CONFLICT` with a fresh quote.
@@ -142,8 +144,26 @@ export function createOrder(userId: string, key: string, body: CreateOrderReques
   }
   if (!wallet.connection) return { ok: false, status: 409, code: 'WALLET_NOT_CONNECTED' }
   if (Date.parse(quote.expiresAt) <= now) return { ok: false, status: 409, code: 'QUOTE_EXPIRED' }
+  // A quote buys at most one order: another key with a quote already used by a pending or
+  // confirmed order (new tab, cleared attempt) must not create a second purchase. A declined
+  // order releases it (a new attempt may pay the same quote).
+  const used = getDb().orders.some(
+    (record) => record.userId === userId && record.order.quoteId === quote.quoteId && record.order.status !== 'declined',
+  )
+  if (used) {
+    return { ok: false, status: 409, code: 'QUOTE_EXPIRED' }
+  }
   // An empty quote cannot become an order (receipts have at least one line).
   if (quote.lines.length === 0) return { ok: false, status: 422, code: 'EMPTY_QUOTE' }
+
+  // The quote must price the current cart: a cart changed since (edited in another tab,
+  // items bought) re-quotes it with the differences.
+  const cartVersion = findCart(owner)?.version ?? 0
+  if (cartVersion !== quote.cartVersion) {
+    const fresh = createQuote(owner, quote.network, quote.quoteId, now)
+    if (!fresh.ok) return { ok: false, status: 404, code: 'QUOTE_NOT_FOUND' }
+    return { ok: false, status: 409, code: 'QUOTE_CHANGED', details: { changes: fresh.quote.changes, quote: fresh.quote } }
+  }
 
   const { changes, availability } = revalidate(quote, now)
   if (changes.length > 0) {

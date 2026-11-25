@@ -9,7 +9,7 @@ import {
   writeAttempt,
   writeDraft,
 } from './checkout-storage'
-import { placeOrder, type OrdersApi } from './place-order'
+import { placeOrder, recoverAttempt, type OrdersApi } from './place-order'
 
 const USER = 'usr_001'
 const PAYLOAD: CreateOrderRequest = {
@@ -118,5 +118,40 @@ describe('checkout storage clearing rules', () => {
     clearCheckoutStateOnLogout(USER)
     expect(readAttempt(USER)).toBeNull()
     expect(readDraft(USER)).toBeNull()
+  })
+})
+
+describe('placeOrder / recoverAttempt (final review fixes)', () => {
+  it('a confirmed previous order of the same quote is shown instead of paying again', async () => {
+    writeAttempt({ userId: USER, quoteId: 'qt_1', idempotencyKey: 'key-0', payload: { ...PAYLOAD, note: 'old' }, orderId: 'ord_0' })
+    const confirmed = { id: 'ord_0', status: 'confirmed', quoteId: 'qt_1' } as unknown as Order
+    const api = apiWith({ getOrder: vi.fn(async () => confirmed) })
+    await expect(placeOrder(USER, PAYLOAD, { api, newKey: () => 'key-1' })).resolves.toBe(confirmed)
+    expect(api.createOrder).not.toHaveBeenCalled()
+    expect(readAttempt(USER)).toBeNull()
+  })
+
+  it('recoverAttempt replays an attempt without order id with the same key', async () => {
+    writeAttempt({ userId: USER, quoteId: 'qt_1', idempotencyKey: 'key-0', payload: PAYLOAD })
+    const api = apiWith({ createOrder: vi.fn(async () => ({ order: order('ord_9', 'confirmed'), replayed: true })) })
+    await expect(recoverAttempt(USER, api)).resolves.toMatchObject({ id: 'ord_9' })
+    expect(api.createOrder).toHaveBeenCalledWith(PAYLOAD, 'key-0')
+    expect(readAttempt(USER)?.orderId).toBe('ord_9')
+  })
+
+  it('recoverAttempt drops an attempt the server rejects as never created; ignores attempts with an order', async () => {
+    writeAttempt({ userId: USER, quoteId: 'qt_1', idempotencyKey: 'key-0', payload: PAYLOAD })
+    const rejected = apiWith({
+      createOrder: vi.fn(async () => {
+        throw new ApiError({ kind: 'conflict', status: 409, code: 'QUOTE_CHANGED', message: 'changed' })
+      }),
+    })
+    await expect(recoverAttempt(USER, rejected)).resolves.toBeNull()
+    expect(readAttempt(USER)).toBeNull()
+
+    writeAttempt({ userId: USER, quoteId: 'qt_1', idempotencyKey: 'key-0', payload: PAYLOAD, orderId: 'ord_1' })
+    const api = apiWith()
+    await expect(recoverAttempt(USER, api)).resolves.toBeNull()
+    expect(api.createOrder).not.toHaveBeenCalled()
   })
 })
