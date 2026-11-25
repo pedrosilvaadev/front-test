@@ -1,9 +1,15 @@
 import type * as React from 'react'
+import { lazy, Suspense } from 'react'
 import { MobileTabBar } from './mobile-tab-bar'
 import { SiteFooter } from './site-footer'
 import { SiteHeader } from './site-header'
 
 const MAIN_CONTENT_ID = 'main-content'
+
+/** Realtime connection (P5-01) in its own chunk, with `socket.io-client` loaded on demand. */
+const RealtimeBridge = lazy(() =>
+  import('@/features/realtime/realtime-bridge').then((module) => ({ default: module.RealtimeBridge })),
+)
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -33,6 +39,9 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
       <SiteFooter />
       <MobileTabBar />
+      <Suspense fallback={null}>
+        <RealtimeBridge />
+      </Suspense>
     </div>
   )
 }

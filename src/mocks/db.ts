@@ -244,21 +244,73 @@ export function getDb(): Readonly<MockDb> {
   return db
 }
 
+/**
+ * Resources whose `version` increased in one commit (P5-01): the realtime mock
+ * server turns them into `nft.updated` / `order.updated` events.
+ */
+export interface DbCommit {
+  nfts: NftDetail[]
+  orders: OrderRecord[]
+}
+type DbCommitListener = (commit: DbCommit) => void
+const commitListeners = new Set<DbCommitListener>()
+
+/** Subscribes to committed version bumps (mutations and resets). Returns the unsubscribe. */
+export function subscribeDbCommits(listener: DbCommitListener): () => void {
+  commitListeners.add(listener)
+  return () => commitListeners.delete(listener)
+}
+
+function versionsOf(state: Pick<MockDbState, 'nfts' | 'orders'>) {
+  return {
+    nfts: new Map(state.nfts.map((nft) => [nft.id, nft.version])),
+    orders: new Map(state.orders.map((record) => [record.order.id, record.order.version])),
+  }
+}
+
+function notifyCommit(before: ReturnType<typeof versionsOf>): void {
+  if (commitListeners.size === 0) return
+  const commit: DbCommit = {
+    nfts: db.nfts.filter((nft) => nft.version > (before.nfts.get(nft.id) ?? 0)),
+    orders: db.orders.filter((record) => record.order.version > (before.orders.get(record.order.id) ?? 0)),
+  }
+  if (commit.nfts.length === 0 && commit.orders.length === 0) return
+  for (const listener of commitListeners) listener(commit)
+}
+
 /** Applies a mutation to the db and persists the result. */
 export function updateDb<T>(mutate: (state: MockDb) => T): T {
+  const before = versionsOf(db)
   const result = mutate(db)
   persist()
+  notifyCommit(before)
   return result
 }
 
-/** Restores the exact seeded initial state and clears the persisted snapshot. */
+/**
+ * Restores the seeded initial state and clears the persisted snapshot. NFT
+ * versions stay monotonic: an NFT whose content differs from the seed comes
+ * back as `previous + 1` (untouched ones keep their version), so a client that
+ * cached a newer version accepts the restored state over REST and through
+ * `nft.updated` (stale-event protection compares versions).
+ */
 export function resetDb(): void {
-  db = { ...createSeedState(), generation: db.generation + 1 }
+  const before = versionsOf(db)
+  const previousNfts = new Map(db.nfts.map((nft) => [nft.id, nft]))
+  const seed = createSeedState()
+  seed.nfts = seed.nfts.map((nft) => {
+    const previous = previousNfts.get(nft.id)
+    if (!previous) return nft
+    const changed = JSON.stringify({ ...previous, version: 0 }) !== JSON.stringify({ ...nft, version: 0 })
+    return { ...nft, version: changed ? previous.version + 1 : Math.max(nft.version, previous.version) }
+  })
+  db = { ...seed, generation: db.generation + 1 }
   try {
     storage?.removeItem(DB_STORAGE_KEY)
   } catch {
     // ignore
   }
+  notifyCommit(before)
 }
 
 /** Finds an NFT by id or slug. */

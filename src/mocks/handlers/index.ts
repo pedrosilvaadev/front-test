@@ -8,6 +8,7 @@ import { nftHandlers } from './nfts'
 import { orderHandlers } from './orders'
 import { profileHandlers } from './profile'
 import { quoteHandlers } from './quote'
+import { realtimeHandlers } from '../realtime-server'
 import { walletHandlers } from './wallets'
 
 /**
@@ -17,4 +18,4 @@ import { walletHandlers } from './wallets'
  * Note: `server.use()` / `worker.use()` overrides are prepended and
  * therefore bypass the scenario middleware.
  */
-export const handlers = [scenarioHandler, ...devHandlers, ...healthHandlers, ...authHandlers, ...nftHandlers, ...cartHandlers, ...quoteHandlers, ...walletHandlers, ...orderHandlers, ...favoriteHandlers, ...profileHandlers]
+export const handlers = [scenarioHandler, ...devHandlers, ...healthHandlers, ...authHandlers, ...nftHandlers, ...cartHandlers, ...quoteHandlers, ...walletHandlers, ...orderHandlers, ...favoriteHandlers, ...profileHandlers, ...realtimeHandlers]

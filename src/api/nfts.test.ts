@@ -257,12 +257,12 @@ describe('POST /api/__dev/nfts/:id', () => {
     expect((await getNft('nft_001')).version).toBe(1)
   })
 
-  it('POST /api/__dev/reset restores the seed after a mutation', async () => {
+  it('POST /api/__dev/reset restores the seed after a mutation (version stays monotonic)', async () => {
     await apiClient.post('/__dev/nfts/nft_001', { price: '5' })
     expect((await getNft('nft_001')).price).toBe('5')
 
     await apiClient.post('/__dev/reset')
 
-    expect(await getNft('nft_001')).toStrictEqual(seed[0])
+    expect(await getNft('nft_001')).toStrictEqual({ ...seed[0], version: 3 })
   })
 })

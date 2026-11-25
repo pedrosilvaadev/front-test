@@ -48,7 +48,9 @@ export function usePurchaseSelection(editions: readonly Edition[]): PurchaseSele
   const [editionId, setEditionId] = useState(() => defaultEdition(editions)?.id)
   const [rawQuantity, setRawQuantity] = useState(1)
 
-  const edition = editions.find((item) => item.id === editionId) ?? defaultEdition(editions)
+  // A selected edition that sold out (realtime/refetch) falls back to one with stock.
+  const selected = editions.find((item) => item.id === editionId)
+  const edition = selected && selected.available > 0 ? selected : defaultEdition(editions)
   const bounds = quantityBounds(edition)
   const soldOut = bounds.max === 0
   const quantity = clampQuantity(rawQuantity, edition)

@@ -107,3 +107,17 @@ describe('usePurchaseSelection', () => {
     expect(result.current.quantity).toBe(2)
   })
 })
+
+describe('usePurchaseSelection: realtime sell-out', () => {
+  it('falls back to an edition with stock when the selected one sells out', () => {
+    const { result, rerender } = renderHook(({ editions }) => usePurchaseSelection(editions), {
+      initialProps: { editions: [of10, of50] },
+    })
+    expect(result.current.edition?.id).toBe('e-1of10')
+    rerender({ editions: [{ ...of10, available: 0 }, of50] })
+    expect(result.current.edition?.id).toBe('e-1of50')
+    expect(result.current.soldOut).toBe(false)
+    rerender({ editions: [{ ...of10, available: 0 }, { ...of50, available: 0 }] })
+    expect(result.current.soldOut).toBe(true)
+  })
+})

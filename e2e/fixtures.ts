@@ -67,6 +67,20 @@ export async function resetMocks(page: Page): Promise<void> {
   expect(result.status, 'POST /api/__dev/reset').toBe(204)
 }
 
+/**
+ * Realtime outage control (P5-01): `false` drops the page's Socket.IO
+ * connection and refuses reconnections, so a dev mutation is only seen over
+ * REST (server-side revalidation paths); `true` lets the client reconnect.
+ */
+export async function setRealtimeOnline(page: Page, online: boolean): Promise<void> {
+  const result = await pageFetch(page, '/api/__dev/realtime', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ online }),
+  })
+  expect(result.status, 'PUT /api/__dev/realtime').toBe(200)
+}
+
 interface MockFixtures {
   /** Auto fixture: every test starts from `/` with a clean mock state and empty localStorage. */
   mockReset: void

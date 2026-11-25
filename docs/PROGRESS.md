@@ -17,7 +17,7 @@
 | P4-01 | R04,R07,R08 | frontend | PASS (quick gate + cart/detail/auth/shell e2e) | deferred (ADR-009 final review) | see git log | DONE |
 | P4-02 | R05,R04,R07,R08 | frontend | PASS (quick gate + checkout/cart/auth e2e) | deferred (ADR-009 final review) | see git log | DONE (merged with P4-03) |
 | P4-03 | R05 | — | — | — | — | MERGED into P4-02 (M3 functional; --full at final review) |
-| P5-01 | R09 | integration | — | — | — | TODO (socket.io-client mock transport, nft/order events, versioning, reconnect; closes M4) |
+| P5-01 | R09 | orchestrator (integration) | PASS (quick gate + full e2e) | deferred (ADR-009 final review) | see git log | DONE — M4 functional (--full at final review) |
 | P6-01 | R11,R10 | qa | — | — | — | TODO (12 E2E groups, visual baselines, a11y) |
 | P6-02 | R12,R13 | qa | — | — | — | TODO (Lighthouse 3x medians, docs, deploy verification — deploy needs separate approval; closes M5) |
 
@@ -26,11 +26,11 @@
 - Recruiter AI-use policy: none reported by owner yet.
 
 ## Backlog (from reviews)
-- mock-api: reset must keep NFT versions monotonic (before P5); remove snapshot on setItem failure; reject/clear previousPrice <= price in dev patch.
+- mock-api: ~~reset must keep NFT versions monotonic~~ (done P5-01); remove snapshot on setItem failure; reject/clear previousPrice <= price in dev patch.
 - qa: throwing-storage test; multi-tab persistence note; strengthen font self-hosting test.
 - frontend: cancel debounced search on history index change; overlay desktop search to avoid nav shift; consider zod-free route validator if Lighthouse needs.
 - ui/layout: hide global mobile search bar + tab bar on NFT detail (Figma); header "Mercado" active on /nft.
-- frontend: detail error-state document title; auto-select an in-stock edition when the selected one sells out (P5 realtime); e2e no-write-request assertion for unavailable actions.
+- frontend: detail error-state document title; ~~auto-select an in-stock edition when the selected one sells out~~ (done P5-01); e2e no-write-request assertion for unavailable actions.
 - ui: safe-area insets for mobile top bar and side gutters; scan button contrast when enabled; switch planned-route <a> to <Link> as routes land.
 - auth follow-ups: lazy account-menu error boundary; stricter stored-token check; move session-bridge to src/lib; scope mutation-cache clear to auth keys before P4.
 - P3: ENS required on profile save; cross-tab logout `storage` listener; idempotency attempt clearing rules (ADR-004).

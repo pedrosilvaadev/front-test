@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { expect, gotoReady, pageFetch, test, waitForMockWorker } from './fixtures'
+import { expect, gotoReady, pageFetch, setRealtimeOnline, test, waitForMockWorker } from './fixtures'
 
 /**
  * P4-01 cart + quote: guest cart persisted server side (mock db) and keyed by
@@ -179,7 +179,8 @@ test.describe('cart page', () => {
     await seedGuestCart(page, [{ editionId: 'nft_001-1of50', quantity: 2 }])
     await openCart(page)
     await expectTotals(page, { subtotal: '2.38 ETH', discount: '(-) 0.00 ETH', total: '2.396 ETH' })
-    // Another buyer leaves only 2 units of 1/50.
+    // Another buyer leaves only 2 units of 1/50 (realtime down: discovered on the next write).
+    await setRealtimeOnline(page, false)
     const patched = await pageFetch(page, '/api/__dev/nfts/nft_001', json({ editions: [{ id: 'nft_001-1of50', available: 2 }] }))
     expect(patched.status).toBe(200)
 

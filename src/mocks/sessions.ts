@@ -114,6 +114,11 @@ function lookup(tokenHash: string): { session: SessionRecord; record: UserRecord
 export async function authenticate(request: Request, now = Date.now()): Promise<AuthenticateResult> {
   const token = readBearerToken(request)
   if (!token) return { ok: false, code: 'UNAUTHORIZED' }
+  return authenticateToken(token, now)
+}
+
+/** Same rules as `authenticate` for a raw token (Socket.IO handshake `auth.token`, P5-01). */
+export async function authenticateToken(token: string, now = Date.now()): Promise<AuthenticateResult> {
   const tokenHash = await hashToken(token)
   // Each tab runs its own mock server: re-read the persisted snapshot first so a
   // login, logout, forced expiry or reset done in another tab is honoured.

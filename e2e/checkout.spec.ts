@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { expect, gotoReady, pageFetch, test, waitForMockWorker } from './fixtures'
+import { expect, gotoReady, pageFetch, setRealtimeOnline, test, waitForMockWorker } from './fixtures'
 
 /**
  * P4-02 checkout + idempotent orders + immutable receipt (desktop + mobile).
@@ -113,6 +113,9 @@ test.describe('checkout', () => {
     const token = await signInStored(page)
     await addToUserCart(page, token)
     await openCheckout(page)
+    // Realtime down: the change is only caught by the server revalidation on confirm
+    // (the pushed path is covered in e2e/realtime.spec.ts).
+    await setRealtimeOnline(page, false)
     const patched = await pageFetch(page, '/api/__dev/nfts/nft_001', json({ price: '1.29' }))
     expect(patched.status).toBe(200)
 

@@ -1,5 +1,6 @@
 import { setupWorker } from 'msw/browser'
 import { initDb } from './db'
+import { enableOrderAutoSettle } from './order-store'
 import { handlers } from './handlers'
 import { unknownApiRouteHandler } from './handlers/fallback'
 import { resolveInitialScenario, setScenario } from './scenario'
@@ -20,6 +21,7 @@ export async function startMockWorker(): Promise<void> {
   initDb(storage)
   const initial = resolveInitialScenario(window.location.search, storage)
   setScenario(initial.name, initial.seed)
+  enableOrderAutoSettle()
 
   await worker.start({
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },

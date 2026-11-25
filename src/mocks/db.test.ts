@@ -11,6 +11,8 @@ import {
   getDb,
   initDb,
   resetDb,
+  subscribeDbCommits,
+  updateDb,
   type DbStorage,
 } from './db'
 import { createNftSeed } from './fixtures/nfts'
@@ -155,17 +157,30 @@ describe('seeded users', () => {
 })
 
 describe('mock db', () => {
-  it('resetDb restores the exact seed after a mutation', () => {
+  it('resetDb restores the seed after a mutation, keeping NFT versions monotonic', () => {
     const seed = createSeedState()
     expect(patchNft('nft_001', { price: '9.99' }).ok).toBe(true)
-    expect(findNft('nft_001')?.price).toBe('9.99')
+    expect(findNft('nft_001')?.version).toBe(2)
 
     const generation = getDb().generation
     resetDb()
 
     expect(getDb().generation).toBe(generation + 1)
-    expect(getDb().nfts).toStrictEqual(seed.nfts)
+    // Seed content, but the changed NFT moves forward (2 → 3) instead of back to 1.
+    expect(getDb().nfts).toStrictEqual(seed.nfts.map((nft) => (nft.id === 'nft_001' ? { ...nft, version: 3 } : nft)))
     expect(getDb().users).toStrictEqual(seed.users)
+  })
+
+  it('subscribeDbCommits reports version bumps of mutations and resets', () => {
+    const commits: string[][] = []
+    const unsubscribe = subscribeDbCommits((commit) => commits.push(commit.nfts.map((nft) => `${nft.id}@${nft.version}`)))
+    patchNft('nft_002', { price: '3' })
+    updateDb(() => undefined)
+    resetDb()
+    resetDb()
+    unsubscribe()
+    patchNft('nft_002', { price: '4' })
+    expect(commits).toEqual([['nft_002@2'], ['nft_002@3']])
   })
 
   it('persists mutations and restores them on the next load (round trip)', () => {

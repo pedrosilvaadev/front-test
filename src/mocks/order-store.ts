@@ -204,6 +204,7 @@ export function createOrder(userId: string, key: string, body: CreateOrderReques
     adjustStock(state, record.reservations, -1)
     state.orders = [...state.orders, record]
   })
+  scheduleSettlement(record.resolveAt)
   return { ok: true, order: structuredClone(order), replayed: false }
 }
 
@@ -255,6 +256,26 @@ export function resolveOrder(orderId: string, status: Exclude<OrderStatus, 'pend
     state.orders = state.orders.map((r) => (r.order.id === orderId ? { ...r, order: next } : r))
   })
   return structuredClone(next)
+}
+
+let autoSettle = false
+
+/**
+ * Browser only (P5-01): also resolve orders when `resolveAt` is reached, not
+ * just on the next read, so `order.updated` is pushed without polling.
+ * Pending orders restored from storage are scheduled too.
+ */
+export function enableOrderAutoSettle(): void {
+  autoSettle = true
+  for (const record of getDb().orders) if (record.order.status === 'pending') scheduleSettlement(record.resolveAt)
+}
+
+function scheduleSettlement(resolveAt: string | null): void {
+  if (!autoSettle || resolveAt === null) return
+  setTimeout(() => {
+    reloadDb()
+    settleDueOrders()
+  }, Math.max(0, Date.parse(resolveAt) - Date.now()) + 5)
 }
 
 /** Applies due deterministic resolutions (called on every order read). */

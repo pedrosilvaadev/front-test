@@ -1,10 +1,11 @@
 import { http, HttpResponse, type DefaultBodyType } from 'msw'
 import type { ErrorEnvelope } from '@/api/errors'
-import { toFieldErrorsDetails, type NftDetail } from '@/contracts'
+import { nftUpdatedEventSchema, orderUpdatedEventSchema, toFieldErrorsDetails, type NftDetail } from '@/contracts'
 import { nftDevPatchSchema, patchNft } from '../catalog'
 import { checkoutControlsSchema, getDb, reloadDb, resetDb, updateDb } from '../db'
 import { resolveOrder } from '../order-store'
 import { disconnectAll } from '../wallet-store'
+import { getRealtimeStatus, publishEvent, resetRealtime, setRealtimeOnline } from '../realtime-server'
 import { apiPath, errorResponse } from '../http'
 import { expireSessions } from '../sessions'
 import { getScenario, isScenarioPresetName, resetScenario, setScenario } from '../scenario'
@@ -16,6 +17,7 @@ export const devHandlers = [
   http.post(devPath('/reset'), () => {
     resetDb()
     resetScenario()
+    resetRealtime()
     return new HttpResponse(null, { status: 204 })
   }),
 
@@ -62,6 +64,43 @@ export const devHandlers = [
     const order = resolveOrder(params.orderId, status)
     if (!order) return errorResponse(404, 'ORDER_NOT_FOUND', 'Order not found.')
     return HttpResponse.json(order)
+  }),
+
+  /** Realtime server state (P5-01): `{ online, connections: [{ userId }] }`. */
+  http.get(devPath('/realtime'), () => HttpResponse.json(getRealtimeStatus())),
+
+  /** Body `{ online: boolean }`: `false` drops every socket and refuses reconnections until `true`. */
+  http.put(devPath('/realtime'), async ({ request }) => {
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return errorResponse(400, 'INVALID_JSON', 'Request body must be JSON.')
+    }
+    const next = typeof body === 'object' && body !== null && 'online' in body ? body.online : undefined
+    if (typeof next !== 'boolean') {
+      return errorResponse(422, 'VALIDATION_ERROR', 'Invalid realtime control.', { fieldErrors: { online: ['Expected a boolean.'] } })
+    }
+    return HttpResponse.json(setRealtimeOnline(next))
+  }),
+
+  /**
+   * Pushes a hand-built event as is (stale/duplicate/foreign-user scenarios):
+   * body = a full `nft.updated` or `order.updated` envelope. 200 `{ delivered }`.
+   */
+  http.post(devPath('/realtime/emit'), async ({ request }) => {
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return errorResponse(400, 'INVALID_JSON', 'Request body must be JSON.')
+    }
+    const type = typeof body === 'object' && body !== null && 'type' in body ? body.type : undefined
+    const parsed = (type === 'order.updated' ? orderUpdatedEventSchema : nftUpdatedEventSchema).safeParse(body)
+    if (!parsed.success) {
+      return errorResponse(422, 'VALIDATION_ERROR', 'Invalid realtime event.', toFieldErrorsDetails(parsed.error))
+    }
+    return HttpResponse.json({ delivered: publishEvent(parsed.data) })
   }),
 
   /** Drops every active wallet connection. 200 `{ disconnected }`. */

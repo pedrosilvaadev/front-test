@@ -202,6 +202,8 @@ The HTTP status determines `ApiError.kind` via `kindFromStatus`; `code` refines 
 - Client: `socket.io-client` (`Socket<ServerToClientEvents, ClientToServerEvents>`), connected to the MSW Socket.IO binding in mocks (P5 documents transport limitations). Handshake `auth: SocketAuth { token? }`; guests connect without a token and receive only public events. Private events go to room `user:<userId>`.
 - One socket per session: created after the session is known, **disconnected and listeners removed on logout / user switch / token expiry**, then recreated for the next session.
 - No client → server events; reconciliation uses REST.
+- Transport (P5-01): Socket.IO `path` `/realtime/socket.io/`, `transports: ['websocket']`, reconnection backoff 0.5–2 s. The mock (`src/mocks/realtime-server.ts`) speaks Engine.IO v4 / Socket.IO v5 over the MSW-intercepted WebSocket: `CONNECT` with an invalid/expired token → `CONNECT_ERROR { message: 'UNAUTHORIZED' | 'SESSION_EXPIRED' }`; guests (no token) are accepted. Events are produced from db commits (any NFT/order version bump). Limitations: one namespace, no long-polling, no connection-state recovery (missed events → REST reconciliation), one server per tab (other tabs' changes arrive over REST).
+- Dev controls (mock only): `GET /api/__dev/realtime` → `{ online, connections: [{ userId }] }`; `PUT /api/__dev/realtime { online }` (false drops sockets and refuses reconnections); `POST /api/__dev/realtime/emit <envelope>` pushes a hand-built `nft.updated`/`order.updated` (stale/duplicate tests) → `{ delivered }`. `POST /api/__dev/reset` keeps NFT versions monotonic.
 
 Envelope (all events):
 
