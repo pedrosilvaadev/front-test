@@ -1,0 +1,11 @@
+node_modules
+dist
+test-results
+playwright-report
+blob-report
+lighthouse-results
+coverage
+docs/lighthouse/*.json
+docs/lighthouse/*.html
+e2e/__screenshots__
+.claude

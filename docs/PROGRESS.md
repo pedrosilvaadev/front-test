@@ -19,8 +19,8 @@
 | P4-03 | R05 | — | — | — | — | MERGED into P4-02 (M3 functional; --full at final review) |
 | P5-01 | R09 | orchestrator (integration) | PASS (quick gate + full e2e) | deferred (ADR-009 final review) | see git log | DONE — M4 functional (--full at final review) |
 | P6-01 | R11,R10 | orchestrator (qa) | PASS (quick gate + full e2e 202 passed) | deferred (ADR-009 final review) | see git log | DONE |
-| P6-02 | R12,R13 | orchestrator (qa) | PASS (quick gate + full e2e 202 passed; Lighthouse 3x medians) | deferred (ADR-009 final review) | see git log | DONE — deploy pending owner approval |
-| FINAL | all | reviewer (independent) | PASS (--full at 3bd5c9c; targeted after fixes) | BLOCK → fixed M1, M2 (docs/tasks/REVIEW-FINAL.md); M3 deploy pending owner | see git log | DONE except deploy |
+| P6-02 | R12,R13 | orchestrator (qa) | PASS (quick gate + full e2e 202 passed; Lighthouse 3x medians) | deferred (ADR-009 final review) | see git log | DONE — deployed https://front-test-gray.vercel.app (owner-approved 2026-11-25) |
+| FINAL | all | reviewer (independent) | PASS (--full at 3bd5c9c; targeted after fixes) | BLOCK → fixed M1, M2 (docs/tasks/REVIEW-FINAL.md); M3 deployed (owner-approved) | see git log | DONE |
 
 ## Blockers
 - Figma: resolved partially — owner exported 15 PNG frames to `docs/design/` (Desktop 1440w: 9 screens; Mobile 414w: 6 screens). No Dev Mode, so exact tokens (colors, fonts, spacing) are sampled from pixels; parity is visual, not token-exact. Brand in design: "Kurio", dark brown theme, orange accent, monospace type.

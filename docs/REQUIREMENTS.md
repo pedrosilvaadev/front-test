@@ -14,4 +14,4 @@
 | R10 | §8 | Figma parity, responsive, skeletons, a11y | P2-01…P6-01 (visual baselines, axe scan e2e/a11y.spec.ts, skeleton specs); deviations in ARCHITECTURE §9 | DONE |
 | R11 | §9 | 12 E2E groups, visual baselines, reports | P6-01 coverage map (docs/tasks/P6-01.md), e2e/__screenshots__, playwright-report | DONE |
 | R12 | §10 | Lighthouse 3 runs x pages x profiles; medians | P6-02 (docs/lighthouse: medians, reports; mobile perf 75/80 below target, justified) | DONE (mobile perf below 90, analysed) |
-| R13 | §12 | Public deploy, refresh, docs, clean checkout | README + ARCHITECTURE + vercel.json (SPA rewrites); public deploy pending owner approval | PARTIAL (deploy pending) |
+| R13 | §12 | Public deploy, refresh, docs, clean checkout | https://front-test-gray.vercel.app (Vercel prod; routes/refresh/MSW/socket/login verified 2026-11-25); README + ARCHITECTURE | DONE |

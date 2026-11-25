@@ -13,3 +13,6 @@ lighthouse-results/
 .figma-token
 .claude/settings.local.json
 .DS_Store
+.vercel/
+
+.vercel

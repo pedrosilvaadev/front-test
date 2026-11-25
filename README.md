@@ -2,6 +2,8 @@
 
 Marketplace de NFTs em React e TypeScript, com uma API REST simulada (MSW) e eventos em tempo real (Socket.IO).
 
+**Demo pública:** https://front-test-gray.vercel.app · **Repositório:** https://github.com/pedrosilvaadev/front-test
+
 Toda a "API" roda no navegador. Não há backend, mas o frontend conversa com ela exatamente como conversaria com um servidor real:
 
 - **REST:** Axios → HTTP → service worker do MSW.
@@ -114,6 +116,15 @@ Os controles abaixo são chamados com `fetch` do próprio navegador, por exemplo
 O desempenho no mobile fica abaixo da meta de 90. As causas (SPA sem SSR, chunk de entrada de 510 kB e MSW no caminho crítico), as medidas tomadas, LCP/CLS/TBT e os próximos passos estão em [`docs/lighthouse/README.md`](docs/lighthouse/README.md).
 
 ## Deploy (Vercel)
+- **Produção:** https://front-test-gray.vercel.app, publicado com `vercel deploy --prod` (Vercel CLI 66.6.0) a partir de `main`.
+- **Verificado após o deploy:**
+  - acesso direto e refresh em `/`, `/nft/emerald-ape-042`, `/perfil`, `/checkout` e `/pedidos/:id`;
+  - MSW ativo;
+  - Socket.IO conectado, com `nft.updated` aplicado;
+  - login;
+  - catálogo com filtros na URL;
+  - `robots.txt`;
+  - `mockServiceWorker.js` sem cache.
 - **Configuração:** framework "Vite", build `npm run build`, output `dist`.
 - **Rotas:** o `vercel.json` reescreve as rotas da SPA para `index.html`, então acesso direto e refresh funcionam em `/nft/...`, `/perfil` etc.
 - **Service worker:** `mockServiceWorker.js` é servido sem cache.
