@@ -18,7 +18,7 @@
 | P4-02 | R05,R04,R07,R08 | frontend | PASS (quick gate + checkout/cart/auth e2e) | deferred (ADR-009 final review) | see git log | DONE (merged with P4-03) |
 | P4-03 | R05 | — | — | — | — | MERGED into P4-02 (M3 functional; --full at final review) |
 | P5-01 | R09 | orchestrator (integration) | PASS (quick gate + full e2e) | deferred (ADR-009 final review) | see git log | DONE — M4 functional (--full at final review) |
-| P6-01 | R11,R10 | qa | — | — | — | TODO (12 E2E groups, visual baselines, a11y) |
+| P6-01 | R11,R10 | orchestrator (qa) | PASS (quick gate + full e2e 202 passed) | deferred (ADR-009 final review) | see git log | DONE |
 | P6-02 | R12,R13 | qa | — | — | — | TODO (Lighthouse 3x medians, docs, deploy verification — deploy needs separate approval; closes M5) |
 
 ## Blockers

@@ -12,6 +12,6 @@
 | R08 | §6 | Stateful MSW scenarios, two users, reset, failures | — | TODO |
 | R09 | §6–7 | socket.io-client mock transport, versioning, reconnect | P5-01 (e2e/realtime.spec.ts, realtime-cache.test.ts) | DONE |
 | R10 | §8 | Figma parity, responsive, skeletons, a11y | — | TODO |
-| R11 | §9 | 12 E2E groups, visual baselines, reports | — | TODO |
+| R11 | §9 | 12 E2E groups, visual baselines, reports | P6-01 coverage map (docs/tasks/P6-01.md), e2e/__screenshots__, playwright-report | DONE |
 | R12 | §10 | Lighthouse 3 runs x pages x profiles; medians | — | TODO |
 | R13 | §12 | Public deploy, refresh, docs, clean checkout | — | TODO |

@@ -81,6 +81,17 @@ describe('applyNftUpdated', () => {
     expect(applyNftUpdated(qc2, nftEvent(2, '2')).inCart).toBe(false)
     expect(qc2.getQueryState(cartKey)?.isInvalidated).toBe(false)
   })
+
+  it('announces a cart change even when the catalog cache is empty, but not for stale versions', () => {
+    const cartKey = queryKeys.cart.owner('user:usr_001')
+    const quoteKey = queryKeys.cart.quote('user:usr_001', { network: 'ethereum', cartVersion: 1 })
+    const qc = client()
+    qc.setQueryData(cartKey, { version: 1, items: [{ nftId: 'nft_001', quantity: 1, nft: { name: 'Emerald Ape #042', version: 3 } }] })
+    qc.setQueryData(quoteKey, { quoteId: 'qt_1', lines: [{ nftId: 'nft_001', name: 'Emerald Ape #042', nftVersion: 3 }] })
+    expect(applyNftUpdated(qc, nftEvent(3, '2'))).toMatchObject({ inCart: false, relevant: false })
+    expect(qc.getQueryState(cartKey)?.isInvalidated).toBe(false)
+    expect(applyNftUpdated(qc, nftEvent(4, '2'))).toMatchObject({ applied: false, inCart: true, relevant: true, name: 'Emerald Ape #042' })
+  })
 })
 
 const HASH = `0x${'a'.repeat(64)}`

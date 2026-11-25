@@ -17,6 +17,11 @@ export default defineConfig({
   workers: isCI ? 1 : undefined,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   outputDir: 'test-results',
+  // Versioned visual baselines (README §9): one file per screen, project and platform.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFileName}/{arg}-{projectName}-{platform}{ext}',
+  expect: {
+    toHaveScreenshot: { animations: 'disabled', caret: 'hide', scale: 'css', maxDiffPixelRatio: 0.01 },
+  },
   use: {
     baseURL,
     trace: 'retain-on-failure',

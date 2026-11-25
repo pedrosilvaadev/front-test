@@ -104,11 +104,13 @@ interface SummaryRowProps {
   value: React.ReactNode
   testId: string
   emphasis?: boolean
+  /** Small right-aligned line under the value (second `dd` of the same term: valid `dl` structure). */
+  note?: string
 }
 
-function SummaryRow({ label, value, testId, emphasis = false }: SummaryRowProps) {
+function SummaryRow({ label, value, testId, emphasis = false, note }: SummaryRowProps) {
   return (
-    <div className={cn('flex items-baseline justify-between gap-2', emphasis ? 'pt-3' : '')}>
+    <div className={cn('flex flex-wrap items-baseline justify-between gap-x-2', emphasis ? 'pt-3' : '')}>
       <dt className={cn('whitespace-nowrap tracking-[0.04em]', emphasis ? 'font-bold text-foreground' : 'text-foreground')}>{label}</dt>
       <dd
         data-testid={testId}
@@ -116,6 +118,7 @@ function SummaryRow({ label, value, testId, emphasis = false }: SummaryRowProps)
       >
         {value}
       </dd>
+      {note ? <dd className="basis-full text-right text-[0.6875rem] tracking-[0.02em] text-brand">{note}</dd> : null}
     </div>
   )
 }
@@ -174,10 +177,7 @@ export function CartSummary({ cart, quote, quoteError, onRetryQuote }: CartSumma
         <dl className="flex flex-col gap-2 text-[0.9375rem] lg:text-sm" aria-busy={!quote || undefined}>
           <SummaryRow label="Subtotal" testId="cart-subtotal" value={value((q) => formatEth(q.subtotal))} />
           <SummaryRow label="Desconto do lançamento" testId="cart-discount" value={value((q) => `(-) ${formatEth(q.discount)}`)} />
-          <div className="flex flex-col">
-            <SummaryRow label="Taxa de rede" testId="cart-fee" value={value((q) => formatEth(q.networkFee))} />
-            <p className="text-right text-[0.6875rem] tracking-[0.02em] text-brand">Taxa estimada</p>
-          </div>
+          <SummaryRow label="Taxa de rede" testId="cart-fee" note="Taxa estimada" value={value((q) => formatEth(q.networkFee))} />
           <SummaryRow label="Total" testId="cart-total" emphasis value={value((q) => formatEth(q.total))} />
         </dl>
       )}

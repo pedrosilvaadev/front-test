@@ -82,21 +82,47 @@ function containsNft(value: unknown, nftId: string): boolean {
   return Object.values(record).some((child) => containsNft(child, nftId))
 }
 
-/** Name of the NFT from any cached copy (for the announcement). */
-function cachedName(queryClient: QueryClient, nftId: string): string | undefined {
-  let name: string | undefined
+/** Calls `match` on every object of every cached query under `prefix` until it returns a value. */
+function findInCache<T>(queryClient: QueryClient, prefix: readonly unknown[], match: (record: Record<string, unknown>) => T | undefined): T | undefined {
+  let found: T | undefined
   const visit = (value: unknown): void => {
-    if (name !== undefined || typeof value !== 'object' || value === null) return
+    if (found !== undefined || typeof value !== 'object' || value === null) return
     if (Array.isArray(value)) return value.forEach(visit)
     const record = value as Record<string, unknown>
-    if (record.id === nftId && typeof record.name === 'string' && typeof record.price === 'string') {
-      name = record.name
-      return
-    }
-    Object.values(record).forEach(visit)
+    found = match(record)
+    if (found === undefined) Object.values(record).forEach(visit)
   }
-  for (const [, data] of queryClient.getQueriesData({ queryKey: queryKeys.catalog.all })) visit(data)
-  return name
+  for (const [, data] of queryClient.getQueriesData({ queryKey: prefix })) visit(data)
+  return found
+}
+
+/** Name of the NFT from any cached copy: catalog summaries/details, cart items (`nft.name`) or quote lines (for the announcement). */
+function cachedName(queryClient: QueryClient, nftId: string): string | undefined {
+  const fromCatalog = findInCache(queryClient, queryKeys.catalog.all, (record) =>
+    record.id === nftId && typeof record.name === 'string' && typeof record.price === 'string' ? record.name : undefined,
+  )
+  return (
+    fromCatalog ??
+    findInCache(queryClient, queryKeys.cart.all, (record) => {
+      if (record.nftId !== nftId) return undefined
+      if (typeof record.name === 'string') return record.name
+      const nft = record.nft as { name?: unknown } | undefined
+      return typeof nft?.name === 'string' ? nft.name : undefined
+    })
+  )
+}
+
+/** Highest NFT version the cart/quote was priced with (`QuoteLine.nftVersion`, cart item `nft.version`). */
+function cartNftVersion(queryClient: QueryClient, nftId: string): number | undefined {
+  let highest: number | undefined
+  findInCache(queryClient, queryKeys.cart.all, (record) => {
+    if (record.nftId !== nftId) return undefined
+    const nft = record.nft as { version?: unknown } | undefined
+    const version = typeof record.nftVersion === 'number' ? record.nftVersion : typeof nft?.version === 'number' ? nft.version : undefined
+    if (version !== undefined && (highest === undefined || version > highest)) highest = version
+    return undefined
+  })
+  return highest
 }
 
 export interface NftEventOutcome {
@@ -128,16 +154,17 @@ export function applyNftUpdated(queryClient: QueryClient, event: NftUpdatedEvent
   }
   if (applied) void queryClient.invalidateQueries({ queryKey: queryKeys.catalog.lists(), refetchType: 'none' })
 
-  const inCart = queryClient
-    .getQueriesData({ queryKey: queryKeys.cart.all })
-    .some(([, data]) => containsNft(data, patch.nftId))
+  // In the cart and newer than what the cart was priced with (stale/duplicate events re-price nothing).
+  const inCart =
+    queryClient.getQueriesData({ queryKey: queryKeys.cart.all }).some(([, data]) => containsNft(data, patch.nftId)) &&
+    isNewerVersion(patch.version, cartNftVersion(queryClient, patch.nftId))
   if (inCart) void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all })
 
   const onActiveDetail = queryClient
     .getQueryCache()
     .findAll({ queryKey: ['catalog', 'detail'], type: 'active' })
     .some((query) => isVersionedNft(query.state.data, patch.nftId))
-  return { applied, inCart, relevant: applied && (onActiveDetail || inCart), name }
+  return { applied, inCart, relevant: inCart || (applied && onActiveDetail), name }
 }
 
 export interface OrderEventOutcome {

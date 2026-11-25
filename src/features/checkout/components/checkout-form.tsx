@@ -487,16 +487,18 @@ function CheckoutSummary(props: CheckoutSummaryProps) {
         </Link>
       </p>
 
-      <dl className="flex flex-col gap-2 border-b border-border pb-3 text-[0.9375rem]" aria-busy={!quote || undefined}>
-        <Row label="Subtotal" testId="checkout-subtotal" value={amount((q) => formatEth(q.subtotal))} />
-        <Row
-          label={quote?.coupon ? `Desconto (${quote.coupon.code})` : 'Desconto do lançamento'}
-          testId="checkout-discount"
-          value={amount((q) => `(-) ${formatEth(q.discount)}`)}
-        />
-        <Row label="Taxa de rede" testId="checkout-fee" value={amount((q) => formatEth(q.networkFee))} />
+      <div className="flex flex-col gap-2 border-b border-border pb-3 text-[0.9375rem]">
+        <dl className="flex flex-col gap-2" aria-busy={!quote || undefined}>
+          <Row label="Subtotal" testId="checkout-subtotal" value={amount((q) => formatEth(q.subtotal))} />
+          <Row
+            label={quote?.coupon ? `Desconto (${quote.coupon.code})` : 'Desconto do lançamento'}
+            testId="checkout-discount"
+            value={amount((q) => `(-) ${formatEth(q.discount)}`)}
+          />
+          <Row label="Taxa de rede" testId="checkout-fee" value={amount((q) => formatEth(q.networkFee))} />
+        </dl>
         <p className="text-center text-[0.6875rem] text-brand">Taxa estimada</p>
-      </dl>
+      </div>
       <div className="flex items-baseline justify-between gap-2 px-2">
         <span className="font-bold">Total</span>
         <span className="text-xl font-bold text-brand" data-testid="checkout-total">
